@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamCubing.API", "TeamCubing.API\TeamCubing.API.csproj", "{7B64E088-B9BD-4959-8517-662E814E6627}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamCubing.DAL", "TeamCubing.DAL\TeamCubing.DAL.csproj", "{C638CE65-C2CF-49F7-9266-EBAFB55CC442}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamCubing.BLL", "TeamCubing.BLL\TeamCubing.BLL.csproj", "{13B9F653-40F6-4C2D-A04F-88122759AD6B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7B64E088-B9BD-4959-8517-662E814E6627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B64E088-B9BD-4959-8517-662E814E6627}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B64E088-B9BD-4959-8517-662E814E6627}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B64E088-B9BD-4959-8517-662E814E6627}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C638CE65-C2CF-49F7-9266-EBAFB55CC442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C638CE65-C2CF-49F7-9266-EBAFB55CC442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C638CE65-C2CF-49F7-9266-EBAFB55CC442}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C638CE65-C2CF-49F7-9266-EBAFB55CC442}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13B9F653-40F6-4C2D-A04F-88122759AD6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13B9F653-40F6-4C2D-A04F-88122759AD6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13B9F653-40F6-4C2D-A04F-88122759AD6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13B9F653-40F6-4C2D-A04F-88122759AD6B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
