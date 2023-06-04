@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AutoMapper;
-using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
@@ -27,7 +26,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog(
     (_, lc) => lc
         .WriteTo.Console()
-        .WriteTo.Seq("http://localhost:5341"));
+        .WriteTo.Seq("https://teamcubing-logs.azurewebsites.net"));
 
 builder.Services.AddCors(
     options =>
