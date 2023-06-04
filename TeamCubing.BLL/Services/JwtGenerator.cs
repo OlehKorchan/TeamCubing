@@ -35,7 +35,7 @@ public class JwtGenerator : IJwtGenerator
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.Now.AddHours(_settings.ExpiresInHours),
-            SigningCredentials = credentials
+            SigningCredentials = credentials,
         };
         var tokenHandler = new JwtSecurityTokenHandler();
 
