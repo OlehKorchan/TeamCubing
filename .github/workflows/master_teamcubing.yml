@@ -53,5 +53,5 @@ jobs:
         with:
           app-name: 'teamcubing'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C6296F5C869B4E66B388827FD9C486D9 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3F03CA0C128D4310B979E30B0163B0B0 }}
           package: .
