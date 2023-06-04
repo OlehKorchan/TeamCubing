@@ -1,0 +1,54 @@
+<div class="row justify-content-center">
+  <form #form="ngForm" (ngSubmit)="onSubmit()" class="form col-md-4">
+    <mat-error [hidden]="!hasErrors" class="mb-3">
+      Errors occurred:
+      <ul>
+        <li *ngFor="let httpError of errorMessages">
+          {{ httpError }}
+        </li>
+      </ul>
+    </mat-error>
+    <mat-error [hidden]="!loginResponse.errors?.length" class="mb-3">
+      Validation errors occurred:
+      <li *ngFor="let validationError of loginResponse.errors">
+        {{ validationError }}
+      </li>
+    </mat-error>
+    <mat-form-field appearance="fill" class="full-width mb-3">
+      <mat-label>Username</mat-label>
+      <input
+        #loginField="ngModel"
+        [(ngModel)]="loginRequest.login"
+        id="login"
+        matInput
+        name="login"
+        placeholder="Username"
+        required
+        type="text"
+      />
+      <mat-error [hidden]="loginField.valid || loginField.untouched">
+        Please, specify a valid username
+      </mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="full-width mb-3">
+      <mat-label>Password</mat-label>
+      <input
+        #passwordField="ngModel"
+        [(ngModel)]="loginRequest.password"
+        id="password"
+        matInput
+        name="password"
+        required
+        type="password"
+      />
+      <mat-error [hidden]="passwordField.valid || passwordField.untouched">
+        Please, specify a valid password
+      </mat-error>
+    </mat-form-field>
+    <div class="row mb-3 justify-content-center">
+      <div class="col-md-4">
+        <button color="primary" mat-raised-button type="submit">Login</button>
+      </div>
+    </div>
+  </form>
+</div>

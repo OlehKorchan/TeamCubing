@@ -1,0 +1,25 @@
+<div class="example-table-container">
+  <table [dataSource]="dataSource" class="mat-elevation-z8 full-width" mat-table>
+    <ng-container matColumnDef="position">
+      <th *matHeaderCellDef mat-header-cell>No.</th>
+      <td *matCellDef="let element" mat-cell>{{ element.position }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="time">
+      <th *matHeaderCellDef mat-header-cell>Time</th>
+      <td *matCellDef="let element" mat-cell>{{ element.time | msToTime }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="action">
+      <th *matHeaderCellDef mat-header-cell>Action</th>
+      <td *matCellDef="let element" mat-cell>
+        <button (click)="removeSolve(element.id, element.time)" mat-icon-button>
+          <mat-icon>close</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr *matHeaderRowDef="displayedColumns" class="text-start" mat-header-row></tr>
+    <tr *matRowDef="let row; columns: displayedColumns" class="text-start" mat-row></tr>
+  </table>
+</div>

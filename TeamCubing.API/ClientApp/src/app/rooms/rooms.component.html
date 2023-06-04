@@ -1,0 +1,121 @@
+<div *ngIf="isLoaded">
+  <div *ngIf="isAuthorized; else roomLogin" class="row">
+    <div class="col-sm-12 col-md-8">
+      <app-timer
+        (scrambleGenerated)="onNewScramble($event)"
+        (timerStopped)="onTimerResult($event)"
+        [timeChanged]="timeChanged.asObservable()"
+      ></app-timer>
+    </div>
+    <div>Time to finish current solve: {{ timeToNextSolve }}</div>
+    <div *ngIf="isSolveFinished" class="row-cols-4 justify-content-center">
+      <button
+        (click)="sendResult()"
+        class="col-sm-3 col-md-1 mt-3 mx-2"
+        color="primary"
+        mat-raised-button
+      >
+        Send
+      </button>
+      <button
+        (click)="plusTwoSolve()"
+        *ngIf="!isSolvePlusTwo && !isSolveDnf"
+        class="col-sm-3 col-md-1 mt-3 mx-2"
+        color="accent"
+        mat-raised-button
+      >
+        +2
+      </button>
+      <button
+        (click)="dnfSolve()"
+        *ngIf="!isSolvePlusTwo && !isSolveDnf"
+        class="col-sm-3 col-md-1 mt-3 mx-2"
+        color="warn"
+        mat-raised-button
+      >
+        DNF
+      </button>
+      <button
+        (click)="disablePlusTwoSolve()"
+        *ngIf="isSolvePlusTwo"
+        class="col-sm-3 col-md-1 mt-3 mx-2"
+        color="accent"
+        mat-raised-button
+      >
+        remove +2
+      </button>
+      <button
+        (click)="disableDnfSolve()"
+        *ngIf="isSolveDnf"
+        class="col-sm-3 col-md-1 mt-3 mx-2"
+        color="warn"
+        mat-raised-button
+      >
+        remove DNF
+      </button>
+    </div>
+    <div class="row">
+      <div class="col-sm-12 col-md-4 mt-3">
+        <div class="row align-items-end">
+          <div class="col-1">
+            <div class="row">#</div>
+            <div *ngFor="let solve of solves" class="row">{{ solve.solveNumber }}</div>
+          </div>
+          <div *ngFor="let user of connectedUserNames" class="col">
+            <div class="row">{{ user }}</div>
+            <div *ngFor="let solve of solves" class="row">
+              {{ getUserSolveTime(user, solve) }}
+            </div>
+          </div>
+          <!-- <button (click)="leaveRoom()" class="col-1" color="warn" mat-raised-button>Leave</button> -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <ng-template #roomLogin>
+    <mat-card>
+      <mat-card-content>
+        <p>
+          <mat-form-field appearance="outline">
+            <mat-label>Room Name</mat-label>
+            <input [(ngModel)]="roomNameInput" matInput placeholder="Name" required />
+          </mat-form-field>
+        </p>
+        <p>
+          <mat-form-field appearance="outline">
+            <mat-label>Room Password</mat-label>
+            <input
+              [(ngModel)]="roomPasswordInput"
+              matInput
+              placeholder="Password"
+              required
+              type="password"
+            />
+          </mat-form-field>
+        </p>
+        <div *ngIf="isLoginFailed" class="text-danger mb-3">
+          Room with provided name doesn't exists or wrong password
+        </div>
+        <div *ngIf="isRoomCreateFailed" class="text-danger mb-3">
+          Room with provided name already exists
+        </div>
+
+        <button (click)="joinRoom()" class="mx-2" color="primary" mat-raised-button>
+          Join room
+        </button>
+        <button (click)="createNewRoom()" color="accent" mat-raised-button>Create new room</button>
+      </mat-card-content>
+    </mat-card>
+    <p class="mt-2">Available rooms:</p>
+    <div class="row-cols-sm-2 row-cols-md-4 mt-3">
+      <a
+        *ngFor="let room of availableRooms"
+        [routerLink]="['/rooms', room]"
+        class="col-3 mt-2 mx-2"
+        mat-raised-button
+      >
+        {{ room }}
+      </a>
+    </div>
+  </ng-template>
+</div>

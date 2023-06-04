@@ -1,0 +1,117 @@
+{
+  "root": true,
+  "ignorePatterns": [
+    "projects/**/*"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "*.ts"
+      ],
+      "parserOptions": {
+        "project": [
+          "tsconfig.json"
+        ],
+        "createDefaultProgram": true
+      },
+      "extends": [
+        "plugin:@angular-eslint/recommended",
+        "plugin:@angular-eslint/template/process-inline-templates",
+        "plugin:@typescript-eslint/recommended",
+        "prettier",
+        "plugin:prettier/recommended"
+      ],
+      "rules": {
+        "@angular-eslint/directive-selector": [
+          "error",
+          {
+            "type": "attribute",
+            "prefix": "app",
+            "style": "camelCase"
+          }
+        ],
+        "@angular-eslint/component-selector": [
+          "error",
+          {
+            "type": "element",
+            "prefix": "app",
+            "style": "kebab-case"
+          }
+        ],
+        "@typescript-eslint/typedef": [
+          "warn",
+          {
+            "call-signature": true,
+            "parameter": true,
+            "arrow-parameter": true,
+            "property-declaration": true,
+            "variable-declaration": true,
+            "member-variable-declaration": true,
+            "object-destructuring": true,
+            "array-destructuring": true
+          }
+        ],
+        "prettier/prettier": [
+          "error",
+          {
+            "endOfLine": "auto"
+          }
+        ],
+        "import/extensions": "off",
+        "import/no-extraneous-dependencies": "off",
+        "import/no-unresolved": "off",
+        "import/prefer-default-export": "off",
+        "class-methods-use-this": "off",
+        "lines-between-class-members": "off",
+        "no-var": "error",
+        "no-debugger": "error",
+        "no-duplicate-imports": "error",
+        "no-duplicate-case": "error",
+        "prefer-const": "warn",
+        "quotes": [
+          "warn",
+          "single"
+        ],
+        "curly": "warn",
+        "eqeqeq": [
+          "warn",
+          "smart"
+        ],
+        "no-magic-numbers": [
+          "warn",
+          {
+            "ignore": [
+              -1,
+              0,
+              1,
+              2
+            ]
+          }
+        ],
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/explicit-member-accessibility": [
+          "warn"
+        ]
+      }
+    },
+    {
+      "files": [
+        "*.html"
+      ],
+      "extends": [
+        "plugin:@angular-eslint/template/recommended",
+        "prettier",
+        "plugin:prettier/recommended"
+      ],
+      "rules": {
+        "prettier/prettier": [
+          "warn"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav
+    #sideNav
+    *ngIf="isUserLoggedIn"
+    [mode]="isScreenSmall ? 'over' : 'side'"
+    [opened]="!isScreenSmall"
+    class="sidenav mat-elevation-z10"
+  >
+    <mat-toolbar color="primary">Menu</mat-toolbar>
+    <mat-list>
+      <a [routerLink]="['']" mat-list-item>Timer</a>
+    </mat-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <app-toolbar (toggleSidenav)="toggleSidenav()"></app-toolbar>
+    <div class="container">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

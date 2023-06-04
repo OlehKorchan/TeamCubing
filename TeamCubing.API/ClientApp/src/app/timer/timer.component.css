@@ -1,0 +1,15 @@
+.bg-gray {
+  background-color: #888888;
+}
+
+.bg-green {
+  background-color: #64ffda;
+}
+
+.bg-red {
+  background-color: #f06292;
+}
+
+.timer-container {
+  height: 50vh;
+}

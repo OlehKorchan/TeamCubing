@@ -129,6 +129,7 @@ DocProject/Help/Html2
 DocProject/Help/html
 
 # Click-Once directory
+.angular/
 publish/
 
 # Publish Web Output
@@ -229,3 +230,4 @@ _Pvt_Extensions
 
 # FAKE - F# Make
 .fake/
+/ClientApp/.angular/
