@@ -10,7 +10,7 @@ namespace TeamCubing.BLL.Services;
 
 public class RoomService : IRoomService
 {
-    private const int RoomSolveMaxDurationSeconds = 120;
+    private const int RoomSolveMaxDurationSeconds = 240;
     private readonly ILogger<RoomService> _logger;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;

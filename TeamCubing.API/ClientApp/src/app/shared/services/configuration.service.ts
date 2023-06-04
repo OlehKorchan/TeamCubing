@@ -32,4 +32,8 @@ export class ConfigurationService {
   public getExpiresAtSessionKey(): string {
     return 'expires_at';
   }
+
+  public getTimeToNextSolve(): number {
+    return 240;
+  }
 }

@@ -7,6 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Location } from '@angular/common';
 import { TimerSolve } from '../models/TimerSolve';
+import { ConfigurationService } from '../shared/services/configuration.service';
 
 @Component({
   selector: 'app-rooms',
@@ -43,7 +44,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public isSolvePlusTwo: boolean = false;
   public isSolveDnf: boolean = false;
 
-  public timeToNextSolve: number = 120;
+  public timeToNextSolve: number = 0;
   private interval!: any;
 
   public constructor(
@@ -51,7 +52,10 @@ export class RoomsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private location: Location,
-  ) {}
+    private config: ConfigurationService,
+  ) {
+    this.timeToNextSolve = config.getTimeToNextSolve();
+  }
 
   public ngOnInit(): void {
     const roomName = this.route.snapshot.paramMap.get('roomName');
@@ -293,13 +297,13 @@ export class RoomsComponent implements OnInit, OnDestroy {
         this.timeToNextSolve--;
       } else {
         this.roomService.forceNewSolve(this.currentRoomId);
-        this.timeToNextSolve = 120;
+        this.timeToNextSolve = this.config.getTimeToNextSolve();
       }
     }, 1000);
   }
 
   private stopRoomSolveTimer(): void {
     clearInterval(this.interval);
-    this.timeToNextSolve = 120;
+    this.timeToNextSolve = this.config.getTimeToNextSolve();
   }
 }
