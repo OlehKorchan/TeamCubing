@@ -107,6 +107,7 @@ builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
 builder.Services.AddTransient<ISessionService, SessionService>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IRoomService, RoomService>();
+builder.Services.AddTransient<IScramblerService, ScramblerService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(

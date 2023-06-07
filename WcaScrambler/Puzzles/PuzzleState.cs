@@ -1,0 +1,4 @@
+﻿namespace WcaScrambler.Puzzles
+{
+
+}

@@ -16,19 +16,22 @@ public class RoomService : IRoomService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ApplicationUser _user;
     private readonly IUserService _userService;
+    private readonly IScramblerService _scramblerService;
 
     public RoomService(
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ApplicationUser user,
         IUserService userService,
-        ILogger<RoomService> logger)
+        ILogger<RoomService> logger,
+        IScramblerService scramblerService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _user = user;
         _userService = userService;
         _logger = logger;
+        _scramblerService = scramblerService;
     }
 
     public async Task<RoomCheckAccessResult> CheckAccessAsync(string roomName)
@@ -94,7 +97,7 @@ public class RoomService : IRoomService
                         {
                             RoomId = room.Id,
                             SolveNumber = nextSolveNumber,
-                            Scramble = "GENERATING...",
+                            Scramble = _scramblerService.GenerateThreeByThreeScramble(),
                             StartTime = DateTime.UtcNow,
                         });
 

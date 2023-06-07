@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\TeamCubing.DAL\TeamCubing.DAL.csproj" />
+        <ProjectReference Include="..\WcaScrambler\WcaScrambler.csproj" />
     </ItemGroup>
 
     <ItemGroup>

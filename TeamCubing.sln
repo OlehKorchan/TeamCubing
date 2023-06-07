@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamCubing.DAL", "TeamCubin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamCubing.BLL", "TeamCubing.BLL\TeamCubing.BLL.csproj", "{13B9F653-40F6-4C2D-A04F-88122759AD6B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcaScrambler", "WcaScrambler\WcaScrambler.csproj", "{BF812D03-D7B3-4C7E-9AEB-22241B5E4C6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{13B9F653-40F6-4C2D-A04F-88122759AD6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13B9F653-40F6-4C2D-A04F-88122759AD6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13B9F653-40F6-4C2D-A04F-88122759AD6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF812D03-D7B3-4C7E-9AEB-22241B5E4C6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF812D03-D7B3-4C7E-9AEB-22241B5E4C6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF812D03-D7B3-4C7E-9AEB-22241B5E4C6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF812D03-D7B3-4C7E-9AEB-22241B5E4C6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
