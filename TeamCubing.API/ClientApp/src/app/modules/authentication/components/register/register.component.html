@@ -8,10 +8,10 @@
         </li>
       </ul>
     </mat-error>
-    <mat-error [hidden]="!registerResponse.errors?.length" class="mb-3">
+    <mat-error [hidden]="registerResponse.isSuccess" class="mb-3">
       Validation errors occurred:
-      <li *ngFor="let validationError of registerResponse.errors">
-        {{ validationError }}
+      <li>
+        {{ registerResponse.errorMessage }}
       </li>
     </mat-error>
     <mat-form-field appearance="fill" class="full-width mb-3">

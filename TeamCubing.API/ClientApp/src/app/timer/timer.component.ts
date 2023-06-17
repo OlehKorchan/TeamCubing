@@ -1,7 +1,6 @@
 import { Component, HostListener, Input, OnInit, Output } from '@angular/core';
 import { Observable, Subject, timer } from 'rxjs';
 import { MsToTimePipe } from '../pipes/ms-to-time.pipe';
-import { TimerSolve } from '../models/TimerSolve';
 
 export enum BackgroundColors {
   Red = 'bg-red',
@@ -16,7 +15,7 @@ export enum BackgroundColors {
 })
 export class TimerComponent implements OnInit {
   @Output()
-  public timerStopped: Subject<TimerSolve> = new Subject<TimerSolve>();
+  public timerStopped: Subject<number> = new Subject<number>();
 
   @Input()
   public timeChanged!: Observable<number>;
@@ -86,8 +85,6 @@ export class TimerComponent implements OnInit {
   private stopTimer(): void {
     this.isRunning = false;
     this.backgroundColorClass = '';
-    this.timerStopped.next({
-      time: this.timeInMilliseconds,
-    });
+    this.timerStopped.next(this.timeInMilliseconds);
   }
 }

@@ -1,5 +1,8 @@
 ﻿using TeamCubing.BLL.Models;
-using TeamCubing.DAL.Models;
+using TeamCubing.Domain.DTO;
+using TeamCubing.Domain.Models;
+using TeamCubing.Domain.RequestModels;
+using TeamCubing.Domain.ResponseModels;
 
 namespace TeamCubing.BLL.Interfaces;
 
@@ -7,19 +10,16 @@ public interface IRoomService
 {
     Task<RoomCheckAccessResult> CheckAccessAsync(string roomName);
 
-    Task<RoomDto> CreateRoomAsync(RoomLoginDto loginDto);
+    Task<ModelResponse<Room>> CreateRoomAsync(RoomLoginRequest loginDto);
 
-    Task<List<string>> GetAllAsync();
+    Task<List<string>> GetAllRoomNamesAsync();
 
-    Task<string> LeaveCurrentRoomAsync();
+    Task<List<string>> LeaveAllRoomsAsync();
 
-    Task<RoomDto> GetRoomWithUsersAndSolvesAsync(int roomId);
+    Task<RoomLoginResponse> LoginToRoomAsync(RoomLoginRequest loginDto);
 
-    Task<RoomDto> GetRoomByNameWithUsersAsync(string roomName);
+    Task<RoomOperationResponse<SolveResult>>
+        AddUserResultAsync(NewUserResultRequest request);
 
-    Task<RoomLoginResult> LoginToRoomAsync(RoomLoginDto loginDto);
-
-    Task<RoomSolveResultDto> AddUserResultAsync(RoomSolveResult roomSolveResult);
-    public Task<bool> IsSolveFinished(int solveId);
-    public Task<RoomSolveDto> CreateNextSolveInRoomAsync(RoomDto room);
+    Task<SolvePushResponse> PushSolveToRoomAsync(string roomId, bool isForce);
 }

@@ -2,24 +2,22 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using AutoMapper;
+using AspNetCore.Identity.Stores;
+using AspNetCore.Identity.Stores.AzureCosmosDB.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using TeamCubing.API.Hubs;
-using TeamCubing.API.Mappings;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Services;
-using TeamCubing.BLL.Settings;
-using TeamCubing.DAL.Data;
 using TeamCubing.DAL.Interfaces;
-using TeamCubing.DAL.Models;
 using TeamCubing.DAL.Repositories;
+using TeamCubing.Domain.Models;
+using TeamCubing.Domain.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,179 +60,188 @@ builder.Services
     );
 builder.Services.AddSignalR();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(
-    options =>
-    {
-        options.AddSecurityDefinition(
-            "Bearer",
-            new OpenApiSecurityScheme
-            {
-                Name = HeaderNames.Authorization,
-                Description =
-                    "Enter the Bearer Authorization string as following: `Bearer Generated-JWT-Token`",
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.Http,
-                Scheme = "Bearer",
-                BearerFormat = "JWT",
-            });
+AddSwagger();
 
-        options.AddSecurityRequirement(
-            new OpenApiSecurityRequirement
-            {
+ConfigureServices();
+
+var settings = builder.Configuration.GetSection(nameof(Settings));
+builder.Services.Configure<Settings>(settings);
+var configuration = settings.Get<Settings>();
+
+SetupIdentity();
+
+AddAuthAndUserAccessor();
+
+ConfigureMiddleware();
+
+void AddSwagger()
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(
+        options =>
+        {
+            options.AddSecurityDefinition(
+                "Bearer",
+                new OpenApiSecurityScheme
                 {
-                    new OpenApiSecurityScheme
+                    Name = HeaderNames.Authorization,
+                    Description =
+                        "Enter the Bearer Authorization string as following: `Bearer Generated-JWT-Token`",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                });
+
+            options.AddSecurityRequirement(
+                new OpenApiSecurityRequirement
+                {
                     {
-                        Reference = new OpenApiReference
+                        new OpenApiSecurityScheme
                         {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer",
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer",
+                            },
                         },
+                        Array.Empty<string>()
                     },
-                    Array.Empty<string>()
-                },
-            });
-    }
-);
-
-var mapperConfig = new MapperConfiguration(mc => { mc.AddProfile(new GeneralProfile()); });
-
-var mapper = mapperConfig.CreateMapper();
-builder.Services.AddSingleton(mapper);
-
-builder.Services.AddTransient<IJwtGenerator, JwtGenerator>();
-builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
-builder.Services.AddTransient<ISessionService, SessionService>();
-builder.Services.AddTransient<IUserService, UserService>();
-builder.Services.AddTransient<IRoomService, RoomService>();
-builder.Services.AddTransient<IScramblerService, ScramblerService>();
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(
-    options => options.UseSqlServer(connectionString),
-    ServiceLifetime.Transient
-);
-
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(nameof(JwtSettings)));
-
-builder.Services
-    .AddIdentity<ApplicationUser, IdentityRole>(options => options.User.RequireUniqueEmail = false)
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
-
-var key = new SymmetricSecurityKey(
-    Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:TokenKey"])
-);
-builder.Services
-    .AddAuthentication(
-        options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        }
-    )
-    .AddJwtBearer(
-        options =>
-        {
-            options.SaveToken = true;
-            options.RequireHttpsMetadata = false;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                IssuerSigningKey = key,
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    var accessToken = context.Request.Query["access_token"];
-
-                    // If the request is for our hub...
-                    var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) &&
-                        path.StartsWithSegments("/api/hubs"))
-                    {
-                        // Read the token out of the query string
-                        context.Token = accessToken;
-                    }
-
-                    return Task.CompletedTask;
-                },
-            };
+                });
         }
     );
+}
 
-builder.Services.Configure<IdentityOptions>(
-    options =>
-    {
-        // Password settings.
-        options.Password.RequireDigit = true;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequireUppercase = true;
-        options.Password.RequiredLength = 6;
-        options.Password.RequiredUniqueChars = 1;
+void SetupIdentity()
+{
+    builder.Services.Configure<IdentityStoresOptions>(
+        options => options
+            .UseAzureCosmosDB(
+                configuration.CosmosSettings.Host,
+                configuration.CosmosSettings.Secret,
+                databaseId: configuration.CosmosSettings.Database));
 
-        // Lockout settings.
-        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-        options.Lockout.MaxFailedAccessAttempts = 5;
-        options.Lockout.AllowedForNewUsers = true;
+    builder.Services.AddDefaultIdentity<ApplicationUser>(
+            options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequiredLength = 5;
+                options.Password.RequiredUniqueChars = 1;
 
-        // User settings.
-        options.User.AllowedUserNameCharacters =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-        options.User.RequireUniqueEmail = false;
-    }
-);
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
 
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddTransient(
-    services =>
-    {
-        var httpContextAccessor = services.GetService<IHttpContextAccessor>();
+                options.User.AllowedUserNameCharacters =
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                options.User.RequireUniqueEmail = false;
+            }
+        )
+        .AddRoles<IdentityRole>()
+        .AddAzureCosmosDbStores()
+        .AddDefaultTokenProviders();
+}
 
-        var userClaims = httpContextAccessor?.HttpContext?.User;
-        var userName = userClaims.FindFirstValue(ClaimTypes.NameIdentifier);
+void AddAuthAndUserAccessor()
+{
+    var key = new SymmetricSecurityKey(
+        Encoding.UTF8.GetBytes(configuration.JwtSettings.TokenKey)
+    );
+    builder.Services
+        .AddAuthentication(
+            options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }
+        )
+        .AddJwtBearer(
+            options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    IssuerSigningKey = key,
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
 
-        return new ApplicationUser
+                        // If the request is for our hub...
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            path.StartsWithSegments("/api/hubs"))
+                        {
+                            // Read the token out of the query string
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
+            }
+        );
+
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddTransient(
+        services =>
         {
-            UserName = userName,
-        };
-    });
+            var httpContextAccessor = services.GetService<IHttpContextAccessor>();
 
-var app = builder.Build();
+            var userClaims = httpContextAccessor?.HttpContext?.User;
+            var userName = userClaims.FindFirstValue(ClaimTypes.NameIdentifier);
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseMigrationsEndPoint();
+            return new ApplicationUser
+            {
+                UserName = userName,
+            };
+        });
 }
 
-app.UseCors("TeamCubingApp");
-
-using (var scope = app.Services.CreateScope())
+void ConfigureServices()
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-    dbContext.Database.Migrate();
+    builder.Services.AddSingleton<IRoomRepository, RoomRepository>();
+    builder.Services.AddTransient<IJwtGenerator, JwtGenerator>();
+    builder.Services.AddTransient<IRoomService, RoomService>();
+    builder.Services.AddTransient<IScramblerService, ScramblerService>();
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+void ConfigureMiddleware()
+{
+    var app = builder.Build();
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseMigrationsEndPoint();
+    }
 
-app.UseAuthentication();
+    app.UseCors("TeamCubingApp");
 
-app.UseRouting();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
-app.UseAuthorization();
+    app.UseHttpsRedirection();
+    app.UseStaticFiles();
 
-app.MapControllers();
-app.MapHub<RoomHub>("/api/hubs/room");
+    app.UseAuthentication();
 
-app.MapFallbackToFile("index.html");
+    app.UseRouting();
 
-app.Run();
+    app.UseAuthorization();
+
+    app.MapControllers();
+    app.MapHub<RoomHub>("/api/hubs/room");
+
+    app.MapFallbackToFile("index.html");
+
+    app.Run();
+}

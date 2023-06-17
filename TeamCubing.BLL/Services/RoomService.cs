@@ -1,10 +1,12 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using TeamCubing.BLL.Helpers.Extensions;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Models;
 using TeamCubing.DAL.Interfaces;
-using TeamCubing.DAL.Models;
+using TeamCubing.Domain.DTO;
+using TeamCubing.Domain.Models;
+using TeamCubing.Domain.RequestModels;
+using TeamCubing.Domain.ResponseModels;
 
 namespace TeamCubing.BLL.Services;
 
@@ -12,31 +14,25 @@ public class RoomService : IRoomService
 {
     private const int RoomSolveMaxDurationSeconds = 240;
     private readonly ILogger<RoomService> _logger;
-    private readonly IMapper _mapper;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ApplicationUser _user;
-    private readonly IUserService _userService;
+    private readonly IRoomRepository _roomRepository;
     private readonly IScramblerService _scramblerService;
+    private readonly ApplicationUser _user;
 
     public RoomService(
-        IUnitOfWork unitOfWork,
-        IMapper mapper,
+        IRoomRepository roomRepository,
         ApplicationUser user,
-        IUserService userService,
         ILogger<RoomService> logger,
         IScramblerService scramblerService)
     {
-        _unitOfWork = unitOfWork;
-        _mapper = mapper;
+        _roomRepository = roomRepository;
         _user = user;
-        _userService = userService;
         _logger = logger;
         _scramblerService = scramblerService;
     }
 
     public async Task<RoomCheckAccessResult> CheckAccessAsync(string roomName)
     {
-        var room = await GetRoomByNameWithUsersAsync(roomName);
+        var room = await _roomRepository.ReadByNameAsync(roomName);
 
         if (room == null)
         {
@@ -44,224 +40,214 @@ public class RoomService : IRoomService
         }
 
         return room.ConnectedUserNames.Contains(_user.UserName) ||
-               room.WasOnceConnectedUsers.Contains(_user.UserName)
+               room.WasOnceConnectedUserNames.Contains(_user.UserName)
             ? RoomCheckAccessResult.Authorized
             : RoomCheckAccessResult.Forbidden;
     }
 
-    public async Task<RoomDto> CreateRoomAsync(RoomLoginDto loginDto)
+    public async Task<ModelResponse<Room>> CreateRoomAsync(RoomLoginRequest request)
     {
-        if (string.IsNullOrEmpty(loginDto.RoomName))
+        var result = new ModelResponse<Room>();
+        if (string.IsNullOrEmpty(request.RoomName) || request.RoomPassword == null)
         {
-            throw new ArgumentNullException();
+            // TODO: Move all hardcoded strings to messages class
+            result.ErrorMessage = "Invalid room name or password";
+
+            return result;
         }
 
-        var createdRoom = await RunSqlOperationSafely(
-            async () =>
+        var isRoomExist = await _roomRepository.ReadByNameAsync(request.RoomName) != null;
+
+        if (isRoomExist)
+        {
+            result.ErrorMessage = "Room with provided name already exists";
+
+            return result;
+        }
+
+        var room = await _roomRepository.InsertAsync(
+            new Room
             {
-                var room = await _unitOfWork
-                    .GetRepository<Room>()
-                    .CreateOneAsync(
-                        new Room
-                        {
-                            Name = loginDto.RoomName,
-                            Password = loginDto.RoomPassword,
-                            WasOnceConnectedUsers = string.Empty,
-                        });
-
-                await _unitOfWork.SaveAsync();
-
-                return room;
+                Id = Guid.NewGuid().ToString(),
+                Name = request.RoomName,
+                Password = request.RoomPassword,
             });
 
-        if (createdRoom is null)
-        {
-            return null;
-        }
+        _logger.LogInformation("Room Created: {SerializedResult}", room.ToJsonString());
 
-        await CreateNextSolveInRoomAsync(_mapper.Map<Room, RoomDto>(createdRoom));
+        result.IsSuccess = true;
+        result.Model = room;
 
-        return _mapper.Map<Room, RoomDto>(createdRoom);
+        return result;
     }
 
-    public async Task<RoomSolveDto> CreateNextSolveInRoomAsync(RoomDto room)
+    public async Task<SolvePushResponse> PushSolveToRoomAsync(string roomId, bool isForce)
     {
-        var nextSolveNumber = room.Solves.Count + 1;
+        var result = new SolvePushResponse();
 
-        var created = await RunSqlOperationSafely(
-            async () =>
+        var room = await _roomRepository.ReadByIdAsync(roomId);
+
+        if (room is null)
+        {
+            return result;
+        }
+
+        result.RoomName = room.Name;
+
+        var lastSolve = GetLastSolveInRoom(room);
+
+        if (lastSolve is null || IsSolveFinished(lastSolve, room) || isForce)
+        {
+            var created = await CreateNextSolveInRoomAsync(room);
+
+            if (created is null)
             {
-                var solve = await _unitOfWork.GetRepository<RoomSolve>()
-                    .CreateOneAsync(
-                        new RoomSolve
-                        {
-                            RoomId = room.Id,
-                            SolveNumber = nextSolveNumber,
-                            Scramble = _scramblerService.GenerateThreeByThreeScramble(),
-                            StartTime = DateTime.UtcNow,
-                        });
+                return result;
+            }
 
-                await _unitOfWork.SaveAsync();
-
-                return solve;
-            });
-
-        if (created is null)
-        {
-            return null;
+            result.IsSuccess = true;
+            result.Model = created;
         }
 
-        return new RoomSolveDto
-        {
-            Id = created.Id,
-            SolveNumber = created.SolveNumber,
-            Scramble = created.Scramble,
-            Results = new List<RoomSolveResultDto>(),
-            RoomId = room.Id,
-        };
+        return result;
     }
 
-    public async Task<List<string>> GetAllAsync()
+    public async Task<List<string>> GetAllRoomNamesAsync()
     {
-        return (await _unitOfWork.GetRepository<Room>().GetManyAsync(r => true))
+        return (await _roomRepository.ReadAllAsync())
             .Select(r => r.Name)
             .ToList();
     }
 
-    public async Task<string> LeaveCurrentRoomAsync()
+    public async Task<RoomLoginResponse> LoginToRoomAsync(RoomLoginRequest request)
     {
-        var previousRoomName = await UpdateCurrentUserRoomAsync(null);
+        var result = new RoomLoginResponse();
+        var (validationResult, room) = await PerformRoomValidationAsync(request);
 
-        await _unitOfWork.SaveAsync();
-
-        return previousRoomName;
-    }
-
-    public async Task<RoomDto> GetRoomWithUsersAndSolvesAsync(int roomId)
-    {
-        return _mapper.Map<Room, RoomDto>(
-            await _unitOfWork.GetRepository<Room>()
-                .AsQueryable()
-                .Include(r => r.Users)
-                .Include(r => r.Solves)
-                .FirstOrDefaultAsync(r => r.Id == roomId));
-    }
-
-    public async Task<RoomDto> GetRoomByNameWithUsersAsync(string roomName)
-    {
-        var room = await _unitOfWork.GetRepository<Room>()
-            .AsQueryable()
-            .Include(r => r.Users)
-            .FirstOrDefaultAsync(r => r.Name == roomName);
-
-        return _mapper.Map<Room, RoomDto>(room);
-    }
-
-    public async Task<RoomLoginResult> LoginToRoomAsync(RoomLoginDto loginDto)
-    {
-        var (validationResult, room) = await PerformRoomValidationAsync(loginDto);
-
-        if (!validationResult || IsLoginAttemptFailed(room, loginDto, out var userNotInRoom))
+        if (!validationResult ||
+            IsLoginAttemptFailed(room, request.RoomPassword, out var isUserNeverJoined))
         {
-            return new RoomLoginResult
+            return result;
+        }
+
+        if (isUserNeverJoined)
+        {
+            room.WasOnceConnectedUserNames.Add(_user.UserName);
+        }
+
+        var isUserNotInRoom = room.ConnectedUserNames.All(u => u != _user.UserName);
+
+        if (isUserNotInRoom)
+        {
+            room.ConnectedUserNames.Add(_user.UserName);
+        }
+
+        if (isUserNeverJoined || isUserNotInRoom)
+        {
+            await _roomRepository.UpsertAsync(room);
+        }
+
+        result.IsSuccess = true;
+        result.Model = room;
+
+        return result;
+    }
+
+    public async Task<RoomOperationResponse<SolveResult>> AddUserResultAsync(
+        NewUserResultRequest request)
+    {
+        var methodResult = new RoomOperationResponse<SolveResult>();
+        var room = await _roomRepository.ReadByIdAsync(request.RoomId);
+
+        if (room is not null && IsUserInRoom(room))
+        {
+            var roomSolve = room.Solves.FirstOrDefault(s => s.SolveNumber == request.SolveNumber);
+
+            if (roomSolve is not null && IsFirstUserResult(roomSolve))
             {
-                Result = false,
-            };
+                var newResult = new SolveResult
+                {
+                    UserName = _user.UserName,
+                    Time = request.TimeInMilliseconds,
+                };
+
+                roomSolve.Results.Add(newResult);
+
+                await _roomRepository.UpsertAsync(room);
+
+                _logger.LogInformation(
+                    "New user result added {Result}",
+                    newResult.ToJsonString());
+
+                methodResult.IsSuccess = true;
+                methodResult.RoomName = room.Name;
+                methodResult.Model = newResult;
+            }
         }
 
-        var successResult = new RoomLoginResult
-        {
-            Result = true,
-            RoomId = room.Id,
-            ConnectedUserNames = room.Users.Select(u => u.UserName).ToList(),
-            Solves = _mapper.Map<List<RoomSolve>, List<RoomSolveDto>>(room.Solves),
-        };
-
-        if (userNotInRoom)
-        {
-            successResult.ConnectedUserNames.Add(_user.UserName);
-
-            room.WasOnceConnectedUsers += _user.UserName + ',';
-
-            _unitOfWork.GetRepository<Room>().UpdateOne(room);
-        }
-
-        await UpdateCurrentUserRoomAsync(room.Id);
-
-        await _unitOfWork.SaveAsync();
-
-        return successResult;
+        return methodResult;
     }
 
-    public async Task<RoomSolveResultDto> AddUserResultAsync(RoomSolveResult roomSolveResult)
+    public async Task<List<string>> LeaveAllRoomsAsync()
     {
-        var created = await _unitOfWork.GetRepository<RoomSolveResult>()
-            .CreateOneAsync(roomSolveResult);
-        await _unitOfWork.SaveAsync();
+        var roomsWithUser = await _roomRepository.ReadAllRoomsWithUser(_user.UserName);
 
-        return new RoomSolveResultDto
-        {
-            Id = created.Id,
-            UserName = _user.UserName,
-            RoomSolveId = created.RoomSolveId,
-            Time = created.Time,
-        };
+        roomsWithUser.ForEach(r => r.ConnectedUserNames.Remove(_user.UserName));
+
+        await _roomRepository.UpsertManyAsync(roomsWithUser);
+
+        return roomsWithUser.Select(r => r.Name).ToList();
     }
 
-    public async Task<bool> IsSolveFinished(int solveId)
+    private async Task<Solve> CreateNextSolveInRoomAsync(Room room)
     {
-        var solve = await _unitOfWork.GetRepository<RoomSolve>()
-            .AsQueryable()
-            .Include(s => s.Room)
-            .Include(s => s.Results)
-            .FirstOrDefaultAsync(s => s.Id == solveId);
+        var nextSolveNumber = room.Solves.Count + 1;
 
-        return solve.Room.Users.All(un => solve.Results.Any(r => r.User.UserName == un.UserName)) ||
+        var solve = new Solve
+        {
+            SolveNumber = nextSolveNumber,
+            Scramble = _scramblerService.GenerateThreeByThreeScramble(),
+            StartTime = DateTime.UtcNow,
+        };
+
+        room.Solves.Add(solve);
+
+        await _roomRepository.UpsertAsync(room);
+
+        _logger.LogInformation(
+            "Created solve: {Solve} in room: {RoomName}",
+            solve.ToJsonString(),
+            room.Name);
+
+        return solve;
+    }
+
+    private static bool IsSolveFinished(Solve solve, Room room)
+    {
+        return room.ConnectedUserNames.All(un => solve.Results.Any(r => r.UserName == un)) ||
                solve.StartTime.AddSeconds(RoomSolveMaxDurationSeconds) <= DateTime.UtcNow;
     }
 
-    private async Task<Room> GetRoomWithEverythingAsync(string roomName)
+    private async Task<(bool, Room)> PerformRoomValidationAsync(RoomLoginRequest request)
     {
-        return await _unitOfWork
-            .GetRepository<Room>()
-            .AsQueryable()
-            .Include(r => r.Users)
-            .Include(r => r.Solves)
-            .ThenInclude(s => s.Results)
-            .ThenInclude(r => r.User)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(
-                r => r.Name == roomName);
-    }
-
-    private async Task<ApplicationUser> GetCurrentUserTrackingAsync()
-    {
-        return await _unitOfWork
-            .GetRepository<ApplicationUser>()
-            .GetOneTrackingAsync(u => u.UserName == _user.UserName);
-    }
-
-    private async Task<(bool, Room)> PerformRoomValidationAsync(RoomLoginDto loginDto)
-    {
-        if (string.IsNullOrEmpty(loginDto.RoomName))
+        if (string.IsNullOrEmpty(request.RoomName))
         {
             return (false, null);
         }
 
-        var room = await GetRoomWithEverythingAsync(loginDto.RoomName);
+        var room = await _roomRepository.ReadByNameAsync(request.RoomName);
 
         return room == null ? (false, null) : (true, room);
     }
 
-    private bool IsLoginAttemptFailed(Room room, RoomLoginDto loginDto, out bool isUserNotInRoom)
+    private bool IsLoginAttemptFailed(
+        Room room,
+        string providedPassword,
+        out bool isUserNeverJoined)
     {
-        var roomUser = room.WasOnceConnectedUsers
-            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault(un => un == _user.UserName);
+        isUserNeverJoined = room.WasOnceConnectedUserNames.All(u => u != _user.UserName);
 
-        isUserNotInRoom = string.IsNullOrEmpty(roomUser);
-
-        if (isUserNotInRoom && room.Password != loginDto.RoomPassword)
+        if (isUserNeverJoined && room.Password != providedPassword)
         {
             return true;
         }
@@ -269,41 +255,23 @@ public class RoomService : IRoomService
         return false;
     }
 
-    private async Task<string> UpdateCurrentUserRoomAsync(int? newRoomId)
+    private static Solve GetLastSolveInRoom(Room room)
     {
-        var currentUser = await GetCurrentUserTrackingAsync();
-
-        var oldRoomName = string.Empty;
-
-        if (currentUser.RoomId.HasValue)
+        if (room.Solves.Any())
         {
-            var oldRoom = await GetRoomWithUsersAndSolvesAsync(currentUser.RoomId.Value);
-
-            if (oldRoom is not null)
-            {
-                oldRoomName = oldRoom.Name;
-            }
+            return room.Solves.OrderByDescending(r => r.SolveNumber).First();
         }
 
-        currentUser.RoomId = newRoomId;
-
-        _unitOfWork.GetRepository<ApplicationUser>().UpdateOne(currentUser);
-
-        return oldRoomName;
+        return null;
     }
 
-    private async Task<T> RunSqlOperationSafely<T>(Func<Task<T>> sqlOperation)
+    private bool IsFirstUserResult(Solve solve)
     {
-        try
-        {
-            return await sqlOperation.Invoke();
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("Sql error occured {ErrorMessage}", e.Message);
+        return solve.Results.All(r => r.UserName != _user.UserName);
+    }
 
-            //TODO: Handle this in other way, i.e. add envelope with status
-            return default;
-        }
+    private bool IsUserInRoom(Room room)
+    {
+        return room.ConnectedUserNames.Any(r => r == _user.UserName);
     }
 }

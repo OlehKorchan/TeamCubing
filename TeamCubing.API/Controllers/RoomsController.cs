@@ -1,12 +1,9 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using TeamCubing.API.Hubs;
-using TeamCubing.API.Models;
 using TeamCubing.BLL.Interfaces;
-using TeamCubing.BLL.Models;
+using TeamCubing.Domain.DTO;
+using TeamCubing.Domain.RequestModels;
 
 namespace TeamCubing.API.Controllers;
 
@@ -14,33 +11,25 @@ namespace TeamCubing.API.Controllers;
 [ApiController]
 public class RoomsController : ControllerBase
 {
-    private readonly ILogger<RoomsController> _logger;
-    private readonly IMapper _mapper;
     private readonly IHubContext<RoomHub> _roomHub;
     private readonly IRoomService _roomService;
 
-    public RoomsController(
-        IHubContext<RoomHub> roomHub,
-        IRoomService roomService,
-        IMapper mapper,
-        ILogger<RoomsController> logger)
+    public RoomsController(IRoomService roomService, IHubContext<RoomHub> roomHub)
     {
-        _roomHub = roomHub;
         _roomService = roomService;
-        _mapper = mapper;
-        _logger = logger;
+        _roomHub = roomHub;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAllAsync()
     {
-        return Ok(await _roomService.GetAllAsync());
+        return Ok(await _roomService.GetAllRoomNamesAsync());
     }
 
     [HttpGet("leaveCurrentRoom")]
     public async Task<IActionResult> LeaveRoomAsync()
     {
-        return Ok(await _roomService.LeaveCurrentRoomAsync());
+        return Ok(await _roomService.LeaveAllRoomsAsync());
     }
 
     [HttpGet("checkAccess/{roomName}")]
@@ -57,34 +46,17 @@ public class RoomsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAsync(RoomLoginModel loginModel)
+    public async Task<IActionResult> CreateAsync(RoomLoginRequest request)
     {
-        var result = await _roomService.CreateRoomAsync(
-            _mapper.Map<RoomLoginModel, RoomLoginDto>(loginModel));
+        var result = await _roomService.CreateRoomAsync(request);
 
-        if (result is null)
-        {
-            return Ok(false);
-        }
-
-        var serializedResult = JsonSerializer.Serialize(
-            result,
-            new JsonSerializerOptions
-            {
-                ReferenceHandler = ReferenceHandler.IgnoreCycles,
-            });
-
-        _logger.LogInformation("Room Created: {SerializedResult}", serializedResult);
-
-        return Ok(true);
+        return Ok(result.IsSuccess);
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> LoginToRoomAsync(RoomLoginModel loginModel)
+    public async Task<IActionResult> LoginToRoomAsync(RoomLoginRequest request)
     {
-        var result =
-            await _roomService.LoginToRoomAsync(
-                _mapper.Map<RoomLoginModel, RoomLoginDto>(loginModel));
+        var result = await _roomService.LoginToRoomAsync(request);
 
         return Ok(result);
     }

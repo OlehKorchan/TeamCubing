@@ -1,12 +1,10 @@
 <mat-toolbar class="fixed mb-3" color="primary">
-  <button (click)="toggleSidenav.emit()" *ngIf="isUserLoggedIn" class="sidenav-toggle" mat-button>
+  <!-- <button (click)="toggleSidenav.emit()" *ngIf="isUserLoggedIn" class="sidenav-toggle" mat-button>
     <mat-icon>menu</mat-icon>
-  </button>
+  </button> -->
   <a [routerLink]="['/']" class="text-decoration-none text-reset"> TeamCubing </a>
   <span>
-    <button [routerLink]="['/rooms']" class="mx-2" color="accent" mat-raised-button>
-      Rooms
-    </button>
+    <button [routerLink]="['/rooms']" class="mx-2" color="accent" mat-raised-button>Rooms</button>
   </span>
   <span class="spacer"></span>
   <span *ngIf="!isUserLoggedIn">

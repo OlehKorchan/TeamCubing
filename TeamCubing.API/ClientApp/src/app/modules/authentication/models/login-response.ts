@@ -1,6 +1,6 @@
-import { IResponse } from '../../../shared/models/response';
+import { BaseResponse } from '../../../models/baseResponse';
 
-export interface ILoginResponse extends IResponse {
+export interface ILoginResponse extends BaseResponse {
   username: string;
   token: string;
   expiresIn: number;

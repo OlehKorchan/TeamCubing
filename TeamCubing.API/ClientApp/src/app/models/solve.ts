@@ -1,7 +1,11 @@
 ﻿export interface Solve {
-  id: number;
-  time: number;
+  solveNumber: number;
+  results: SolveResult[];
+  startTime: Date;
   scramble: string;
-  sessionId: number;
-  position?: number;
+}
+
+export interface SolveResult {
+  userName: string;
+  time: number;
 }

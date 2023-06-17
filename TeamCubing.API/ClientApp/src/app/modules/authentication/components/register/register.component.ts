@@ -11,24 +11,28 @@ import { AuthenticationService } from '../../services/authentication.service';
   styleUrls: ['./register.component.css'],
 })
 export class RegisterComponent implements OnDestroy {
-  registerRequest: IRegisterRequest = {
+  public registerRequest: IRegisterRequest = {
     userName: '',
     password: '',
     passwordConfirm: '',
   };
-  registerResultSubscription!: Subscription;
-  registerResponse: IRegisterResponse = {
+  public registerResultSubscription!: Subscription;
+  public registerResponse: IRegisterResponse = {
     username: '',
     token: '',
-    errors: [],
+    isSuccess: true,
+    errorMessage: '',
     expiresIn: 0,
   };
-  hasErrors = false;
-  errorMessages: string[] = [];
+  public hasErrors = false;
+  public errorMessages: string[] = [];
 
-  constructor(private _authenticationService: AuthenticationService, private _router: Router) {}
+  public constructor(
+    private _authenticationService: AuthenticationService,
+    private _router: Router,
+  ) {}
 
-  onSubmit(): void {
+  public onSubmit(): void {
     this.hasErrors = false;
     this.errorMessages = [];
 
@@ -39,7 +43,7 @@ export class RegisterComponent implements OnDestroy {
           this.registerResponse = data;
 
           if (
-            !this.registerResponse.errors?.length &&
+            this.registerResponse.isSuccess &&
             this.registerResponse.token &&
             this.registerResponse.username
           ) {
@@ -51,19 +55,19 @@ export class RegisterComponent implements OnDestroy {
       });
   }
 
-  handleHttpError(error: any) {
+  public handleHttpError(error: any) {
     console.log(error?.error?.errorMessage);
     this.hasErrors = true;
     this.errorMessages.push(error?.error?.errorMessage);
   }
 
-  validateConfirmPassword(passwordField: NgModel, confirmPasswordField: NgModel) {
+  public validateConfirmPassword(passwordField: NgModel, confirmPasswordField: NgModel) {
     if (passwordField.value !== confirmPasswordField.value) {
       confirmPasswordField.control.setErrors({ duplicate: true });
     }
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     if (this.registerResultSubscription) {
       this.registerResultSubscription.unsubscribe();
     }

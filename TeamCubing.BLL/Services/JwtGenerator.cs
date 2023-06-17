@@ -4,8 +4,8 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using TeamCubing.BLL.Interfaces;
-using TeamCubing.BLL.Settings;
-using TeamCubing.DAL.Models;
+using TeamCubing.Domain.Models;
+using TeamCubing.Domain.Settings;
 
 namespace TeamCubing.BLL.Services;
 
@@ -14,9 +14,9 @@ public class JwtGenerator : IJwtGenerator
     private readonly SymmetricSecurityKey _key;
     private readonly JwtSettings _settings;
 
-    public JwtGenerator(IOptions<JwtSettings> config)
+    public JwtGenerator(IOptions<Settings> config)
     {
-        _settings = config.Value;
+        _settings = config.Value.JwtSettings;
         _key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_settings.TokenKey));
     }
@@ -26,7 +26,8 @@ public class JwtGenerator : IJwtGenerator
         var claims = new List<Claim>
         {
             new(
-                JwtRegisteredClaimNames.NameId, user.UserName)
+                JwtRegisteredClaimNames.NameId,
+                user.UserName),
         };
 
         var credentials = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);

@@ -8,27 +8,15 @@ import { AppComponent } from './app.component';
 import { SharedModule } from './shared/shared.module';
 import { GlobalInterceptor } from './shared/interceptors/global.interceptor';
 import { LayoutModule } from './modules/layout/layout.module';
-import { SolvesComponent } from './solves/solves.component';
 import { MaterialModule } from './shared/material.module';
 import { TimerComponent } from './timer/timer.component';
-import { ScrambleComponent } from './scramble/scramble.component';
 import { MsToTimePipe } from './pipes/ms-to-time.pipe';
-import { SessionsComponent } from './sessions/sessions.component';
 import { DialogComponent } from './dialog/dialog.component';
 import { RoomsComponent } from './rooms/rooms.component';
 import { RouterModule } from '@angular/router';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    SolvesComponent,
-    TimerComponent,
-    ScrambleComponent,
-    MsToTimePipe,
-    SessionsComponent,
-    DialogComponent,
-    RoomsComponent,
-  ],
+  declarations: [AppComponent, TimerComponent, MsToTimePipe, DialogComponent, RoomsComponent],
   imports: [
     SharedModule,
     MaterialModule,
@@ -46,7 +34,6 @@ import { RouterModule } from '@angular/router';
       multi: true,
     },
   ],
-  exports: [SolvesComponent],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

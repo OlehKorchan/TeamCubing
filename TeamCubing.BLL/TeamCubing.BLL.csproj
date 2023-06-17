@@ -7,13 +7,13 @@
 
     <ItemGroup>
         <ProjectReference Include="..\TeamCubing.DAL\TeamCubing.DAL.csproj" />
+        <ProjectReference Include="..\TeamCubing.Domain\TeamCubing.Domain.csproj" />
         <ProjectReference Include="..\WcaScrambler\WcaScrambler.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="10.0.0" />
-        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.10.0" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.10.0" />
+        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.31.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.31.0" />
     </ItemGroup>
 
 </Project>

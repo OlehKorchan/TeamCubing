@@ -1,10 +1,7 @@
 <div class="container text-center justify-content-center">
   <div class="row align-text-center">
-    <div class="col-auto">
-      <app-scramble
-        (generatedScramble)="onScrambleGenerated($event)"
-        [newScramble]="timerStopped.asObservable()"
-      ></app-scramble>
+    <div class="col-auto mb-3">
+      <h1>{{ scramble }}</h1>
     </div>
   </div>
   <div class="row full-width">
@@ -19,16 +16,6 @@
           <h1>
             {{ timeInMilliseconds | msToTime }}
           </h1>
-        </mat-card-content>
-      </mat-card>
-      <mat-card>
-        <mat-card-content>
-          <span>
-            <h3 *ngIf="mean">mean: {{ mean | msToTime }}</h3>
-          </span>
-          <span *ngFor="let key of averagesKeys">
-            <h3 *ngIf="averages[key]">Ao{{ key }}: {{ averages[key] | msToTime }}</h3>
-          </span>
         </mat-card-content>
       </mat-card>
     </div>

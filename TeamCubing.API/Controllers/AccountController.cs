@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using TeamCubing.API.Helpers;
-using TeamCubing.API.Models;
 using TeamCubing.API.Settings;
+using TeamCubing.BLL.Helpers;
 using TeamCubing.BLL.Interfaces;
-using TeamCubing.BLL.Settings;
-using TeamCubing.DAL.Models;
+using TeamCubing.Domain.Models;
+using TeamCubing.Domain.RequestModels;
+using TeamCubing.Domain.ResponseModels;
+using TeamCubing.Domain.Settings;
 
 namespace TeamCubing.API.Controllers;
 
@@ -27,14 +28,14 @@ public class AccountController : ControllerBase
         SignInManager<ApplicationUser> signInManager,
         IJwtGenerator jwtGenerator,
         ILogger<AccountController> logger,
-        IOptions<JwtSettings> jwtSettings
+        IOptions<Domain.Settings.Settings> jwtSettings
     )
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _jwtGenerator = jwtGenerator;
         _logger = logger;
-        _jwtSettings = jwtSettings.Value;
+        _jwtSettings = jwtSettings.Value.JwtSettings;
     }
 
     [HttpPost("register")]
@@ -49,12 +50,13 @@ public class AccountController : ControllerBase
             var user = new ApplicationUser
             {
                 UserName = registerModel.UserName,
-                Email = registerModel.UserName
+                Email = registerModel.UserName,
             };
 
             var registerResult =
                 await _userManager.CreateAsync(
-                    user, registerModel.Password);
+                    user,
+                    registerModel.Password);
 
             if (registerResult.Succeeded)
             {
@@ -63,8 +65,10 @@ public class AccountController : ControllerBase
                     registerModel.UserName);
 
                 await _signInManager.SignInAsync(
-                    user, false);
+                    user,
+                    false);
 
+                responseModel.IsSuccess = true;
                 responseModel.Username = user.UserName;
                 responseModel.Token = _jwtGenerator.GenerateToken(
                     await _userManager.FindByNameAsync(
@@ -78,25 +82,21 @@ public class AccountController : ControllerBase
                     "User {Username} registration failed",
                     registerModel.UserName);
 
-                foreach (var error in registerResult.Errors)
-                {
-                    responseModel.Errors.Add(error.Description);
-                    _logger.LogError(
-                        "Registration error: {Description}",
-                        error.Description);
-                }
+                ModelErrorsHelper.MapToSingleError(registerResult.Errors, responseModel);
+                _logger.LogError(
+                    "Registration error: {Description}",
+                    responseModel.ErrorMessage);
             }
         }
         else
         {
-            ModelErrorsHelper.PutModelStateErrorsToResponseModel(
-                ModelState, responseModel);
+            ModelErrorsHelper.PutModelStateErrorsToResponseModel(ModelState, responseModel);
 
             _logger.LogError(
                 "Validation of the model failed:" +
                 "\n{Model}\nwith model errors:\n{Errors}",
                 JsonSerializer.Serialize(registerModel),
-                JsonSerializer.Serialize(responseModel.Errors)
+                JsonSerializer.Serialize(responseModel.ErrorMessage)
             );
         }
 
@@ -120,6 +120,7 @@ public class AccountController : ControllerBase
 
             if (loginResult.Succeeded)
             {
+                responseModel.IsSuccess = true;
                 responseModel.Username = loginModel.Login;
                 responseModel.Token = _jwtGenerator.GenerateToken(
                     await _userManager.FindByNameAsync(
@@ -132,24 +133,23 @@ public class AccountController : ControllerBase
             }
             else
             {
-                responseModel.Errors.Add(ErrorMessages.LoginError);
+                responseModel.ErrorMessage = ErrorMessages.LoginError;
                 _logger.LogError(
                     "User {Login} sign in failed with errors:" +
                     "\n{Errors}",
                     loginModel.Login,
-                    responseModel.Errors);
+                    responseModel.ErrorMessage);
             }
         }
         else
         {
-            ModelErrorsHelper.PutModelStateErrorsToResponseModel(
-                ModelState, responseModel);
+            ModelErrorsHelper.PutModelStateErrorsToResponseModel(ModelState, responseModel);
 
             _logger.LogError(
                 "User {Login} sign in failed with errors:" +
                 "\n{Errors}",
                 loginModel.Login,
-                responseModel.Errors);
+                responseModel.ErrorMessage);
         }
 
         return Ok(responseModel);

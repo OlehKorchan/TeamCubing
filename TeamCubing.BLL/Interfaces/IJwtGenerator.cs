@@ -1,4 +1,4 @@
-using TeamCubing.DAL.Models;
+using TeamCubing.Domain.Models;
 
 namespace TeamCubing.BLL.Interfaces;
 

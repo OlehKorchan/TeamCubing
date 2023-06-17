@@ -1,11 +1,12 @@
-import { Injectable, EventEmitter } from '@angular/core';
+import { EventEmitter, Injectable } from '@angular/core';
 import { ConfigurationService } from '../shared/services/configuration.service';
 import { Observable, Subject } from 'rxjs';
-import { IRoomSolve, ISolveResult } from '../models/roomSolve';
-import { IRoomLoginResult } from '../models/roomLoginResult';
+import { Solve, SolveResult } from '../models/solve';
+import { Room } from '../models/room';
 import { HttpClient } from '@angular/common/http';
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
+import { ModelResponse } from '../models/modelResponse';
 
 @Injectable({
   providedIn: 'root',
@@ -15,13 +16,17 @@ export class RoomService {
   private readonly hubEndpoint: string = '/hubs/room';
   private readonly solveFinishedMethodName: string = 'SolveFinished';
   private readonly userLeftMethodName: string = 'UserLeft';
-  private readonly resultsMethodName: string = 'Send';
+  private readonly resultsMethodName: string = 'NewResult';
   private readonly newUsersMethodName: string = 'NewUser';
+  private readonly askForNewSolveMethodName: string = 'AskForNewSolve';
+  private readonly forceNewSolveMethodName: string = 'ForceNewSolve';
+  private readonly joinRoomMethodName: string = 'JoinGroup';
+  private readonly leaveRoomMethodName: string = 'LeaveGroup';
   private hubConnection!: HubConnection;
-  private results$: Subject<ISolveResult> = new Subject<ISolveResult>();
+  private results$: Subject<SolveResult> = new Subject<SolveResult>();
   private users$: Subject<string> = new Subject<string>();
   private leftUsers$: Subject<string> = new Subject<string>();
-  private solveFinished$: EventEmitter<IRoomSolve> = new EventEmitter<IRoomSolve>();
+  private solveFinished$: EventEmitter<Solve> = new EventEmitter<Solve>();
 
   public constructor(
     private config: ConfigurationService,
@@ -29,7 +34,7 @@ export class RoomService {
     private auth: AuthenticationService,
   ) {}
 
-  public results(): Observable<ISolveResult> {
+  public results(): Observable<SolveResult> {
     return this.results$.asObservable();
   }
 
@@ -41,11 +46,11 @@ export class RoomService {
     return this.leftUsers$.asObservable();
   }
 
-  public solveFinished(): Observable<IRoomSolve> {
+  public solveFinished(): Observable<Solve> {
     return this.solveFinished$.asObservable();
   }
 
-  public startConnection(): Promise<any> {
+  public async startConnection(): Promise<any> {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(this.config.getApiUrl() + this.hubEndpoint, {
         accessTokenFactory: () => this.auth.getToken(),
@@ -53,7 +58,6 @@ export class RoomService {
       .build();
     return this.hubConnection
       .start()
-      .then(() => console.log('Connection started'))
       .catch((err) => console.log('Error while starting connection: ' + err));
   }
 
@@ -72,7 +76,7 @@ export class RoomService {
   }
 
   public addUsersResultsListener(): void {
-    this.hubConnection.on(this.resultsMethodName, (data: ISolveResult) => {
+    this.hubConnection.on(this.resultsMethodName, (data: SolveResult) => {
       this.results$.next(data);
       console.log(data);
     });
@@ -86,31 +90,39 @@ export class RoomService {
   }
 
   public addSolveFinishedListener(): void {
-    this.hubConnection.on(this.solveFinishedMethodName, (result: IRoomSolve) => {
+    this.hubConnection.on(this.solveFinishedMethodName, (result: Solve) => {
       this.solveFinished$.emit(result);
     });
   }
 
-  public sendResult(roomId: number, solveId: number, timeMilliseconds: number): void {
+  public sendResult(roomId: string, solveNumber: number, timeMilliseconds: number): void {
     this.hubConnection
-      .invoke(this.resultsMethodName, roomId, solveId, timeMilliseconds)
+      .invoke(this.resultsMethodName, roomId, solveNumber, timeMilliseconds)
       .catch((err) => console.error(err));
   }
 
   public joinRoom(roomName: string): void {
-    this.hubConnection.invoke('JoinGroup', roomName).catch((err) => console.error(err));
+    this.hubConnection.invoke(this.joinRoomMethodName, roomName).catch((err) => console.error(err));
   }
 
   public leaveRoom(roomName: string): void {
-    this.hubConnection.invoke('LeaveGroup', roomName).catch((err) => console.error(err));
+    if (this.hubConnection) {
+      this.hubConnection
+        .invoke(this.leaveRoomMethodName, roomName)
+        .catch((err) => console.error(err));
+    }
   }
 
-  public forceNewSolve(roomId: number): void {
-    this.hubConnection.invoke('ForceNewSolve', roomId).catch((err) => console.error(err));
+  public forceNewSolve(roomId: string): void {
+    this.hubConnection
+      .invoke(this.forceNewSolveMethodName, roomId)
+      .catch((err) => console.error(err));
   }
 
-  public newSolve(roomId: number): void {
-    this.hubConnection.invoke('NewSolve', roomId).catch((err) => console.error(err));
+  public askForNewSolve(roomId: string): void {
+    this.hubConnection
+      .invoke(this.askForNewSolveMethodName, roomId)
+      .catch((err) => console.error(err));
   }
 
   public getAllRooms(): Observable<string[]> {
@@ -130,8 +142,8 @@ export class RoomService {
     );
   }
 
-  public loginToRoom(roomName: string, roomPassword: string): Observable<IRoomLoginResult> {
-    return this.httpClient.post<IRoomLoginResult>(
+  public loginToRoom(roomName: string, roomPassword: string): Observable<ModelResponse<Room>> {
+    return this.httpClient.post<ModelResponse<Room>>(
       this.config.getApiUrl() + this.roomsEndpoint + '/login',
       {
         roomName: roomName,

@@ -6,7 +6,7 @@ import {
   HttpInterceptor,
   HttpRequest,
 } from '@angular/common/http';
-import { catchError, Observable, throwError } from 'rxjs';
+import { catchError, finalize, Observable, throwError } from 'rxjs';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -22,6 +22,7 @@ export class GlobalInterceptor implements HttpInterceptor {
   ) {}
 
   public intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    this.spinner.show();
     const userToken = localStorage.getItem(this._config.getUserTokenSessionKey());
 
     if (userToken) {
@@ -29,10 +30,19 @@ export class GlobalInterceptor implements HttpInterceptor {
         headers: request.headers.set('Authorization', `Bearer ${userToken}`),
       });
 
-      return next.handle(cloned).pipe(catchError((error) => this.handleHttpError(error)));
+      return next.handle(cloned).pipe(
+        catchError((error) => this.handleHttpError(error)),
+        finalize(() => {
+          this.spinner.hide();
+        }),
+      );
     }
 
-    return next.handle(request);
+    return next.handle(request).pipe(
+      finalize(() => {
+        this.spinner.hide();
+      }),
+    );
   }
 
   private handleHttpError(err: any) {

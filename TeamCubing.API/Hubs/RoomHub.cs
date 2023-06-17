@@ -1,11 +1,9 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Models;
-using TeamCubing.DAL.Models;
+using TeamCubing.Domain.Models;
+using TeamCubing.Domain.RequestModels;
 
 namespace TeamCubing.API.Hubs;
 
@@ -13,58 +11,34 @@ namespace TeamCubing.API.Hubs;
 public class RoomHub : Hub
 {
     private readonly ILogger<RoomHub> _logger;
-    private readonly IMapper _mapper;
     private readonly IRoomService _roomService;
     private readonly ApplicationUser _user;
-    private readonly IUserService _userService;
 
     public RoomHub(
         ApplicationUser user,
-        IUserService userService,
         IRoomService roomService,
-        ILogger<RoomHub> logger,
-        IMapper mapper)
+        ILogger<RoomHub> logger)
     {
         _user = user;
-        _userService = userService;
         _roomService = roomService;
         _logger = logger;
-        _mapper = mapper;
     }
 
-    public async Task Send(int roomId, int solveId, int timeMilliseconds)
+    public async Task NewResult(string roomId, int solveNumber, int timeMilliseconds)
     {
-        var room = await _roomService.GetRoomWithUsersAndSolvesAsync(roomId);
+        var response = await _roomService.AddUserResultAsync(
+            new NewUserResultRequest
+            {
+                RoomId = roomId,
+                SolveNumber = solveNumber,
+                TimeInMilliseconds = timeMilliseconds,
+            });
 
-        if (room.ConnectedUserNames.Contains(_user.UserName))
+        if (response.IsSuccess)
         {
-            var userId = await _userService.GetUserIdAsync(_user.UserName);
-            var result = new RoomSolveResult
-            {
-                UserId = userId,
-                Time = timeMilliseconds,
-                RoomSolveId = solveId,
-            };
+            await Clients.Group(response.RoomName).SendAsync(nameof(NewResult), response.Model);
 
-            var response = await _roomService.AddUserResultAsync(result);
-            var serializedResult = JsonSerializer.Serialize(
-                result,
-                new JsonSerializerOptions
-                {
-                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
-                });
-
-            _logger.LogInformation("New user result added {Result}", serializedResult);
-
-            await Clients.Group(room.Name)
-                .SendAsync(
-                    "Send",
-                    response);
-
-            if (await _roomService.IsSolveFinished(solveId))
-            {
-                await SendNewSolveNotificationAsync(room);
-            }
+            await AskForNewSolve(roomId);
         }
     }
 
@@ -73,53 +47,61 @@ public class RoomHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
         await Clients.Group(roomName).SendAsync("NewUser", _user.UserName);
 
-        _logger.LogInformation("User {UserName} joined room {RoomName}", _user.UserName, roomName);
+        _logger.LogInformation(
+            "User {UserName} joined room {RoomName}",
+            _user.UserName,
+            roomName);
     }
 
     public async Task LeaveGroup(string roomName)
     {
-        await _roomService.LeaveCurrentRoomAsync();
+        try
+        {
+            await _roomService.LeaveAllRoomsAsync();
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(
+                "Logout failed for room: {RoomName}, with exception: {Message}",
+                roomName,
+                e.Message);
+        }
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
         await Clients.Group(roomName).SendAsync("UserLeft", _user.UserName);
     }
 
-    public async Task NewSolve(int roomId)
+    public async Task AskForNewSolve(string roomId)
     {
-        var room = await _roomService.GetRoomWithUsersAndSolvesAsync(roomId);
+        var result = await _roomService.PushSolveToRoomAsync(roomId, false);
 
-        var lastSolve = room.Solves.OrderByDescending(r => r.SolveNumber).First();
-
-        if (await _roomService.IsSolveFinished(lastSolve.Id))
-        {
-            await SendNewSolveNotificationAsync(room);
-        }
+        await ProcessPushSolveResultAsync(result);
     }
 
-    public async Task ForceNewSolve(int roomId)
+    public async Task ForceNewSolve(string roomId)
     {
-        var room = await _roomService.GetRoomWithUsersAndSolvesAsync(roomId);
+        var result = await _roomService.PushSolveToRoomAsync(roomId, true);
 
-        await SendNewSolveNotificationAsync(room);
+        await ProcessPushSolveResultAsync(result);
     }
 
     public override async Task OnDisconnectedAsync(Exception exception)
     {
-        var oldRoomName = await _roomService.LeaveCurrentRoomAsync();
+        var rooms = await _roomService.LeaveAllRoomsAsync();
 
-        if (!string.IsNullOrEmpty(oldRoomName))
-        {
-            await Clients.Group(oldRoomName).SendAsync("UserLeft", _user.UserName);
-        }
-
-        _logger.LogInformation("User {UserName} left room {RoomName}", _user.UserName, oldRoomName);
+        var notificationTasks =
+            rooms.Select(room => Clients.Group(room).SendAsync("UserLeft", _user.UserName))
+                .ToList();
+        await Task.WhenAll(notificationTasks);
 
         await base.OnDisconnectedAsync(exception);
     }
 
-    private async Task SendNewSolveNotificationAsync(RoomDto room)
+    private async Task ProcessPushSolveResultAsync(SolvePushResponse response)
     {
-        var nextSolve = await _roomService.CreateNextSolveInRoomAsync(room);
-        await Clients.Group(room.Name).SendAsync("SolveFinished", nextSolve);
+        if (response.IsSuccess)
+        {
+            await Clients.Group(response.RoomName).SendAsync("SolveFinished", response.Model);
+        }
     }
 }
