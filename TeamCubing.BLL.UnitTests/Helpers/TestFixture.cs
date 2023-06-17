@@ -1,41 +1,35 @@
-﻿namespace TeamCubing.BLL.Tests.Helpers;
+﻿using TeamCubing.Domain.Models;
+using TeamCubing.Domain.RequestModels;
+
+namespace TeamCubing.BLL.Tests.Helpers;
 
 public static class TestFixture
 {
     public const string TestRoomName = "ROOMNAME228";
     public const string TestRoomPassword = "ROOMPASSWORD228";
-    public const int TestRoomId = 228;
+    public const string TestRoomId = "228";
     public const string CurrentUserName = "UserName228";
     public const string CurrentUserId = "UserId228";
 
-    public static ApplicationUser GetCurrentUser()
+    public static Room GetEmptyRoom()
     {
-        return new ApplicationUser
-        {
-            UserName = CurrentUserName,
-            Id = CurrentUserId,
-        };
-    }
-
-    public static SqlRoom GetEmptyRoom()
-    {
-        return new SqlRoom
+        return new Room
         {
             Name = TestRoomName,
             Password = TestRoomPassword,
         };
     }
 
-    public static RoomLoginDto GetRoomLoginRequest()
+    public static RoomLoginRequest GetRoomLoginRequest()
     {
-        return new RoomLoginDto
+        return new RoomLoginRequest
         {
             RoomName = TestRoomName,
             RoomPassword = TestRoomPassword,
         };
     }
 
-    public static SqlRoom GetRoomWithEmptySolve()
+    public static Room GetRoomWithEmptySolve()
     {
         var room = GetRoomWithUsers();
 
@@ -44,7 +38,7 @@ public static class TestFixture
         return room;
     }
 
-    public static SqlRoom GetRoomWithFinishedSolve()
+    public static Room GetRoomWithFinishedSolve()
     {
         var roomWithUsers = GetRoomWithUsers();
 
@@ -53,41 +47,37 @@ public static class TestFixture
         return roomWithUsers;
     }
 
-    public static SqlRoom GetRoomWithUsers()
+    public static Room GetRoomWithUsers()
     {
         var room = GetEmptyRoom();
 
         room.Id = TestRoomId;
-        room.Users = new List<ApplicationUser> { GetCurrentUser() };
-        room.WasOnceConnectedUsers = CurrentUserName + ",";
+        room.ConnectedUserNames = new List<string> { CurrentUserName };
+        room.WasOnceConnectedUserNames = new List<string> { CurrentUserName };
 
         return room;
     }
 
-    public static RoomSolve GetFinishedRoomSolve()
+    public static Solve GetFinishedRoomSolve()
     {
         var baseSolve = GetBaseRoomSolve();
-        baseSolve.Results = new List<RoomSolveResult>
+        baseSolve.Results = new List<SolveResult>
         {
             new()
             {
-                Id = 1,
                 Time = 10000,
-                UserId = CurrentUserId,
-                User = GetCurrentUser(),
+                UserName = CurrentUserName,
             },
         };
 
         return baseSolve;
     }
 
-    public static RoomSolve GetBaseRoomSolve()
+    public static Solve GetBaseRoomSolve()
     {
-        return new RoomSolve
+        return new Solve
         {
-            Id = 1,
             Scramble = "R U R U L U L U",
-            RoomId = TestRoomId,
             SolveNumber = 1,
             StartTime = DateTime.UtcNow,
         };

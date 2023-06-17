@@ -5,11 +5,11 @@ namespace TeamCubing.DAL.Interfaces;
 
 public interface IRoomRepository
 {
-    Task<ItemResponse<Room>> InsertAsync(Room room);
+    Task<Room> InsertAsync(Room room);
 
-    Task<ItemResponse<Room>> ReplaceAsync(Room room);
+    Task<Room> ReplaceAsync(Room room);
 
-    Task<ItemResponse<Room>> UpsertAsync(Room room);
+    Task<Room> UpsertAsync(Room room);
 
     Task UpsertManyAsync(IEnumerable<Room> rooms);
 

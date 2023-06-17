@@ -18,19 +18,19 @@ public class RoomRepository : IRoomRepository
         InitializeAsync().GetAwaiter().GetResult();
     }
 
-    public Task<ItemResponse<Room>> InsertAsync(Room room)
+    public async Task<Room> InsertAsync(Room room)
     {
-        return _roomsContainer.CreateItemAsync(room);
+        return (await _roomsContainer.CreateItemAsync(room)).Resource;
     }
 
-    public Task<ItemResponse<Room>> ReplaceAsync(Room room)
+    public async Task<Room> ReplaceAsync(Room room)
     {
-        return _roomsContainer.ReplaceItemAsync(room, room.Id);
+        return (await _roomsContainer.ReplaceItemAsync(room, room.Id)).Resource;
     }
 
-    public Task<ItemResponse<Room>> UpsertAsync(Room room)
+    public async Task<Room> UpsertAsync(Room room)
     {
-        return _roomsContainer.UpsertItemAsync(room);
+        return (await _roomsContainer.UpsertItemAsync(room)).Resource;
     }
 
     public Task UpsertManyAsync(IEnumerable<Room> rooms)
