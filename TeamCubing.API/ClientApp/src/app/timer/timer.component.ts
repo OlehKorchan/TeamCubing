@@ -46,10 +46,6 @@ export class TimerComponent implements OnInit {
     });
   }
 
-  public onScrambleGenerated($event: string): void {
-    this.scramble = $event;
-  }
-
   public onTimeChanged($event: number): void {
     this.timeInMilliseconds = $event;
   }

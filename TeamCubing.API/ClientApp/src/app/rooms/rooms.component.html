@@ -3,6 +3,11 @@
     <div *ngIf="isLoaded">
       <div *ngIf="isAuthorized; else roomLogin" class="row justify-content-center">
         <div class="col-sm-12 col-md-8">
+          <mat-progress-bar
+            mode="determinate"
+            [color]="getSolveProgressColor()"
+            [value]="remainingPercents"
+          ></mat-progress-bar>
           <app-timer
             (timerStopped)="onTimerResult($event)"
             [scramble]="currentSolve.scramble"
@@ -54,15 +59,15 @@
               remove DNF
             </button>
           </div>
-          <div class="row justify-content-center text-center">
-            <h1>Remaining time</h1>
-            <mat-progress-spinner
-              [color]="getSolveProgressColor()"
-              [value]="remainingPercents"
-              mode="determinate"
-            >
-            </mat-progress-spinner>
-          </div>
+          <!--          <div class="row justify-content-center text-center">-->
+          <!--            <h1>Remaining time</h1>-->
+          <!--            <mat-progress-spinner-->
+          <!--              [color]="getSolveProgressColor()"-->
+          <!--              [value]="remainingPercents"-->
+          <!--              mode="determinate"-->
+          <!--            >-->
+          <!--            </mat-progress-spinner>-->
+          <!--          </div>-->
         </div>
         <div class="col-md-4 col-sm-12 mt-3">
           <mat-card>

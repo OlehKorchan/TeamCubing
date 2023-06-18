@@ -2,7 +2,6 @@
 import { Solve, SolveResult } from '../models/solve';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
 import { ConfigurationService } from '../shared/services/configuration.service';
-import { ReturnStatement } from '@angular/compiler';
 
 @Injectable({
   providedIn: 'root',
@@ -31,7 +30,7 @@ export class SolveService {
 
       if (result.time < 0) {
         dnfCount++;
-        maxValue = result.time;
+        maxValue = Math.abs(result.time);
       } else if (result.time < minValue) {
         minValue = result.time;
       } else if (dnfCount === 0 && result.time > maxValue) {
