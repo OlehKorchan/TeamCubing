@@ -5,6 +5,10 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root',
 })
 export class ConfigurationService {
+  public get dnfValue(): number {
+    return -1;
+  }
+
   public getApiUrl(): string {
     return environment.apiUrl;
   }

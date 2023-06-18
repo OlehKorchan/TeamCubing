@@ -69,11 +69,11 @@
             <mat-card-content>
               <h3>
                 <div class="row align-items-end">
-                  <p>Mean: {{ getMean() }} Best: {{ bestUserResult().time | msToTime }}</p>
+                  <p>Mean: {{ mean }} Best: {{ bestUserResult().time | msToTime }}</p>
                   <p>
-                    Ao5: {{ getAverage(5) }} Ao12: {{ getAverage(12) }} Ao50:
-                    {{ getAverage(50) }}Ao100:
-                    {{ getAverage(100) }}
+                    <span *ngFor="let avg of notEmptyAverages">
+                      Ao{{ avg.ao }}: {{ avg.time }} /
+                    </span>
                   </p>
                   <div class="col-1">
                     <div class="row">#</div>

@@ -11,6 +11,7 @@ import { ModelResponse } from '../models/modelResponse';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
 import { MsToTimePipe } from '../pipes/ms-to-time.pipe';
 import { SolveService } from '../services/solve.service';
+import { not } from 'rxjs/internal/util/not';
 
 @Component({
   selector: 'app-rooms',
@@ -56,6 +57,14 @@ export class RoomsComponent implements OnInit, OnDestroy {
   private interval!: any;
   private readonly emptyTime: string = '--:--';
 
+  public mean: string = 'n/a';
+  private averages: { ao: number; isOn: boolean; time: string }[] = [
+    { ao: 5, isOn: false, time: 'n/a' },
+    { ao: 12, isOn: false, time: 'n/a' },
+    { ao: 50, isOn: false, time: 'n/a' },
+    { ao: 100, isOn: false, time: 'n/a' },
+  ];
+
   public constructor(
     private spinner: NgxSpinnerService,
     private roomService: RoomService,
@@ -67,6 +76,10 @@ export class RoomsComponent implements OnInit, OnDestroy {
     private solveService: SolveService,
   ) {
     this.timeToNextSolve = config.getTimeToNextSolve();
+  }
+
+  public get notEmptyAverages(): { ao: number; isOn: boolean; time: string }[] {
+    return this.averages.flatMap((a) => (a.isOn ? a : []));
   }
 
   public get currentUserName(): string {
@@ -84,7 +97,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
     const result = this.room.solves
       ?.flatMap((s) => {
-        return s.results?.find((r) => r.userName === user);
+        return s.results?.find((r) => r.userName === user && r.time > 0);
       })
       ?.sort((one, two) => {
         if (one?.time && two?.time) {
@@ -244,6 +257,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
       )[0];
       if (currentSolve) {
         this.currentSolve = currentSolve;
+        this.recalculateAverages();
       }
       this.roomService.askForNewSolve(this.room.id);
     } else {
@@ -262,9 +276,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   }
 
   public getMean(): string {
-    const currentUserResults = this.solveService.getCurrentUserResultsFromRoom(this.room);
-
-    const mean = this.solveService.calculateMean(0, currentUserResults);
+    const mean = this.solveService.calculateMean(0, this.room.solves);
 
     if (mean <= 0) {
       return 'n/a';
@@ -276,9 +288,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   }
 
   public getAverage(n: number): string {
-    const currentUserResults = this.solveService.getCurrentUserResultsFromRoom(this.room);
-
-    const average = this.solveService.calculateAverage(n, currentUserResults);
+    const average = this.solveService.calculateAverage(n, this.room.solves);
 
     if (average <= 0) {
       return 'n/a';
@@ -320,6 +330,10 @@ export class RoomsComponent implements OnInit, OnDestroy {
       this.roomService.results().subscribe({
         next: (result: SolveResult): void => {
           this.appendNewUserResult(result);
+
+          if (result.userName === this.currentUserName) {
+            this.recalculateAverages();
+          }
         },
       }),
       this.roomService.solveFinished().subscribe({
@@ -392,4 +406,37 @@ export class RoomsComponent implements OnInit, OnDestroy {
     clearInterval(this.interval);
     this.timeToNextSolve = this.config.getTimeToNextSolve();
   }
+
+  private recalculateAverages(): void {
+    const toString = new MsToTimePipe();
+    const mean = this.solveService.calculateMean(0, this.room.solves);
+    if (mean > 0) {
+      this.mean = toString.transform(mean);
+    }
+
+    for (const n of [5, 12, 50, 100]) {
+      const aoN = this.solveService.calculateAverage(n, this.room.solves);
+      let avg = this.averages.find((a) => a.ao === n);
+      if (!avg) {
+        avg = {
+          ao: n,
+          isOn: false,
+          time: 'n/a',
+        };
+        this.averages.push(avg);
+      }
+
+      if (aoN === this.config.dnfValue || aoN > 0) {
+        avg.isOn = true;
+        avg.time = toString.transform(aoN);
+      } else {
+        avg.isOn = false;
+        avg.time = 'n/a';
+
+        return;
+      }
+    }
+  }
+
+  protected readonly not = not;
 }
