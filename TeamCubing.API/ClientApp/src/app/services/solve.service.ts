@@ -18,20 +18,23 @@ export class SolveService {
       return 0;
     }
 
-    let minValue = 0;
-    let maxValue = 0;
+    let minValue = avgResults[0].time;
+    let maxValue = avgResults[0].time;
     let sum = 0;
+    let count = 0;
 
     let dnfCount = 0;
 
     for (const result of avgResults) {
-      sum += result.time;
+      sum += Math.abs(result.time);
+      count++;
 
       if (result.time < 0) {
         dnfCount++;
+        maxValue = result.time;
       } else if (result.time < minValue) {
         minValue = result.time;
-      } else if (result.time > maxValue) {
+      } else if (dnfCount === 0 && result.time > maxValue) {
         maxValue = result.time;
       }
     }
@@ -43,7 +46,7 @@ export class SolveService {
     sum -= minValue;
     sum -= maxValue;
 
-    return sum / (size - 2);
+    return sum / (count - 2);
   }
 
   public calculateMean(meanOf: number, solves: Solve[]): number {

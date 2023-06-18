@@ -8,10 +8,10 @@
             [scramble]="currentSolve.scramble"
             [timeChanged]="timeChanged.asObservable()"
           ></app-timer>
-          <div *ngIf="isSolveFinished" class="row-cols-4 justify-content-center">
+          <div *ngIf="isSolveFinished" class="row-cols-3 justify-content-center text-center">
             <button
               (click)="sendResult()"
-              class="col-sm-3 col-md-1 mt-3 mx-2"
+              class="col-sm-4 col-md-3 mt-3 mx-2"
               color="primary"
               mat-raised-button
             >
@@ -20,7 +20,7 @@
             <button
               (click)="plusTwoSolve()"
               *ngIf="!isSolvePlusTwo && !isSolveDnf"
-              class="col-sm-3 col-md-1 mt-3 mx-2"
+              class="col-sm-4 col-md-3 mt-3 mx-2"
               color="accent"
               mat-raised-button
             >
@@ -29,7 +29,7 @@
             <button
               (click)="dnfSolve()"
               *ngIf="!isSolvePlusTwo && !isSolveDnf"
-              class="col-sm-3 col-md-1 mt-3 mx-2"
+              class="col-sm-4 col-md-3 mt-3 mx-2"
               color="warn"
               mat-raised-button
             >
@@ -38,7 +38,7 @@
             <button
               (click)="disablePlusTwoSolve()"
               *ngIf="isSolvePlusTwo"
-              class="col-sm-3 col-md-1 mt-3 mx-2"
+              class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
               color="accent"
               mat-raised-button
             >
@@ -47,22 +47,22 @@
             <button
               (click)="disableDnfSolve()"
               *ngIf="isSolveDnf"
-              class="col-sm-3 col-md-1 mt-3 mx-2"
+              class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
               color="warn"
               mat-raised-button
             >
               remove DNF
             </button>
           </div>
-          <h1>
-            Solve ends in:
+          <div class="row justify-content-center text-center">
+            <h1>Remaining time</h1>
             <mat-progress-spinner
               [color]="getSolveProgressColor()"
               [value]="remainingPercents"
               mode="determinate"
             >
             </mat-progress-spinner>
-          </h1>
+          </div>
         </div>
         <div class="col-md-4 col-sm-12 mt-3">
           <mat-card>
