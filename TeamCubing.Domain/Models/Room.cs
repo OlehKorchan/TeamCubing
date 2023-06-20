@@ -11,6 +11,9 @@ public class Room
     [JsonProperty("type")]
     public RoomType Type { get; set; }
 
+    [JsonProperty("settings")]
+    public RoomSettings Settings { get; set; }
+
     [JsonProperty("name")]
     public string Name { get; set; }
 

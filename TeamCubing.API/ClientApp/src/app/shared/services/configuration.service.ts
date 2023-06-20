@@ -38,6 +38,6 @@ export class ConfigurationService {
   }
 
   public getTimeToNextSolve(): number {
-    return 240;
+    return 300;
   }
 }

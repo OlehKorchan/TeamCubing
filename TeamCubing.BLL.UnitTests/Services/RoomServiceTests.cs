@@ -1,7 +1,4 @@
-﻿using System.Linq.Expressions;
-using AutoMapper;
-using FluentAssertions;
-using Microsoft.Azure.Cosmos;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TeamCubing.BLL.Interfaces;
@@ -11,6 +8,7 @@ using TeamCubing.DAL.Interfaces;
 using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
+using TeamCubing.Domain.ResponseModels;
 using Xunit;
 
 namespace TeamCubing.BLL.Tests.Services;
@@ -104,7 +102,7 @@ public class RoomServiceTests
     {
         // Arrange
         var testRoom = TestFixture.GetEmptyRoom();
-        var request = TestFixture.GetRoomLoginRequest();
+        var request = TestFixture.GetRoomCreateRequest();
 
         _roomRepositoryMock
             .Setup(
@@ -136,10 +134,14 @@ public class RoomServiceTests
         string password)
     {
         // Arrange
-        var request = new RoomLoginRequest
+        var request = new RoomCreateRequest
         {
             RoomName = roomName,
             RoomPassword = password,
+            Settings = new RoomSettings
+            {
+                IsOpen = false,
+            },
         };
 
         // Act
@@ -269,18 +271,25 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldReturnAllRoomNames()
+    public async Task GetAllAsync_ShouldReturnAllRooms()
     {
         // Arrange
         var testRooms = new List<Room> { TestFixture.GetEmptyRoom() };
-        var expected = testRooms.Select(r => r.Name);
+        var expected = testRooms.Select(r => new RoomDisplayDataResponse
+        {
+            RoomName = r.Name,
+            IsOpen = r.Settings.IsOpen,
+            Puzzle = r.Settings.Puzzle,
+            ConnectedUsersCount = r.ConnectedUserNames.Count,
+            MaxUsersCount = r.Settings.UsersLimit,
+        });
 
         _roomRepositoryMock
             .Setup(m => m.ReadAllAsync())
             .ReturnsAsync(testRooms);
 
         // Act
-        var actual = await _sut.GetAllRoomNamesAsync();
+        var actual = await _sut.GetAllRoomsDataAsync();
 
         // Assert
         actual.Should().BeEquivalentTo(expected);
@@ -301,7 +310,9 @@ public class RoomServiceTests
 
         // Assert
         previousRoomName.Should().BeEquivalentTo(roomWithUser.Name);
-        _roomRepositoryMock.Verify(m => m.ReadAllRoomsWithUser(TestFixture.CurrentUserName), Times.Once);
+        _roomRepositoryMock.Verify(
+            m => m.ReadAllRoomsWithUser(TestFixture.CurrentUserName),
+            Times.Once);
     }
 
     [Fact]
@@ -435,7 +446,7 @@ public class RoomServiceTests
         // Arrange
         var roomToLogin = TestFixture.GetEmptyRoom();
         roomToLogin.Id = "1";
-        var loginRequest = new RoomLoginRequest()
+        var loginRequest = new RoomLoginRequest
         {
             RoomName = roomToLogin.Name,
             RoomPassword = string.Empty,

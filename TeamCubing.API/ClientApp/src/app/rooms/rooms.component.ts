@@ -12,6 +12,12 @@ import { AuthenticationService } from '../modules/authentication/services/authen
 import { MsToTimePipe } from '../pipes/ms-to-time.pipe';
 import { SolveService } from '../services/solve.service';
 import { not } from 'rxjs/internal/util/not';
+import { MatDialog } from '@angular/material/dialog';
+import { CreateRoomDialogComponent } from './create-room-dialog/create-room-dialog.component';
+import { RoomLoginRequest } from '../models/roomLoginRequest';
+import { RoomDisplayDataResponse } from '../models/roomDisplayDataResponse';
+import { RoomPuzzle } from '../models/roomSettings';
+import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
 
 @Component({
   selector: 'app-rooms',
@@ -23,18 +29,18 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public isAuthorized: boolean = false;
   public isSolveFinished: boolean = false;
 
-  public roomNameInput: string = '';
-  public roomPasswordInput: string = '';
-
-  public isLoginFailed: boolean = false;
-  public isRoomCreateFailed: boolean = false;
-
   public room: Room = {
     solves: [],
     connectedUserNames: [],
     name: '',
     id: '',
     wasOnceConnectedUserNames: [],
+    settings: {
+      puzzle: RoomPuzzle.ThreeByThreeCube,
+      enableSolveTimeLimit: true,
+      isOpen: false,
+      usersLimit: 3,
+    },
   };
   public currentSolve: Solve = {
     results: [],
@@ -44,7 +50,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   };
   public currentTime: number = 0;
 
-  public availableRooms: string[] = [];
+  public availableRooms: RoomDisplayDataResponse[] = [];
 
   public subs$: Subscription[] = [];
 
@@ -54,10 +60,10 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public isSolveDnf: boolean = false;
 
   public timeToNextSolve: number = 0;
+  public mean: string = 'n/a';
+  protected readonly not = not;
   private interval!: any;
   private readonly emptyTime: string = '--:--';
-
-  public mean: string = 'n/a';
   private averages: { ao: number; isOn: boolean; time: string }[] = [
     { ao: 5, isOn: false, time: 'n/a' },
     { ao: 12, isOn: false, time: 'n/a' },
@@ -73,7 +79,8 @@ export class RoomsComponent implements OnInit, OnDestroy {
     private location: Location,
     private config: ConfigurationService,
     private auth: AuthenticationService,
-    private solveService: SolveService,
+    public solveService: SolveService,
+    public dialog: MatDialog,
   ) {
     this.timeToNextSolve = config.getTimeToNextSolve();
   }
@@ -88,6 +95,20 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
   public get remainingPercents(): number {
     return (this.timeToNextSolve / this.config.getTimeToNextSolve()) * 100;
+  }
+
+  public ngOnInit(): void {
+    this.route.paramMap.subscribe({
+      next: (param) => {
+        this.isAuthorized = false;
+        const roomName = param.get('roomName');
+        if (roomName) {
+          this.joinRoomIfHasAccess(roomName);
+        } else {
+          this.loadAllRooms();
+        }
+      },
+    });
   }
 
   public bestUserResult(user: string = ''): SolveResult {
@@ -117,56 +138,50 @@ export class RoomsComponent implements OnInit, OnDestroy {
     };
   }
 
-  public ngOnInit(): void {
-    const roomName = this.route.snapshot.paramMap.get('roomName');
-    if (roomName) {
-      this.joinRoomIfHasAccess(roomName);
-    } else {
-      this.loadAllRooms();
-    }
+  public createNewRoom(): void {
+    const dialogItem = this.dialog.open(CreateRoomDialogComponent, {
+      width: '300px',
+    });
+
+    dialogItem.afterClosed().subscribe((data: RoomLoginRequest) => {
+      if (data) {
+        this.router.navigate(['/rooms', data.roomName]);
+      }
+    });
   }
 
-  public createNewRoom(): void {
-    this.isRoomCreateFailed = false;
-    this.isLoginFailed = false;
-    if (this.roomNameInput && this.roomPasswordInput) {
-      this.roomService.createRoom(this.roomNameInput, this.roomPasswordInput).subscribe({
-        next: (response: boolean): void => {
-          if (response) {
-            this.joinRoom();
+  public openRoomJoinDialog(roomName: string): void {
+    this.dialog
+      .open(JoinRoomDialogComponent, {
+        data: {
+          roomName: roomName,
+        },
+        width: '300px',
+      })
+      .afterClosed()
+      .subscribe({
+        next: (response) => {
+          const room = response as Room;
+          if (room) {
+            this.setupRoomConnection(room);
           } else {
-            this.isRoomCreateFailed = true;
+            this.router.navigate(['/rooms']);
           }
         },
       });
-    }
   }
 
-  public joinRoom(): void {
-    this.isLoginFailed = false;
-    this.isRoomCreateFailed = false;
+  public loginAndConnectToRoom(roomName: string, roomPassword?: string): void {
+    const request: RoomLoginRequest = {
+      roomName: roomName,
+      roomPassword: roomPassword,
+    };
 
-    this.roomService.loginToRoom(this.roomNameInput, this.roomPasswordInput).subscribe({
+    this.roomService.loginToRoom(request).subscribe({
       next: (response: ModelResponse<Room>): void => {
         if (response.isSuccess) {
-          this.setupRoomConnection(response.model.name, response.model.id).then(() => {
-            if (this.isLoaded) {
-              this.room = response.model;
-              this.tryGetLastSolveFromRoomSolves();
-
-              this.location.replaceState('/rooms/' + this.room.name);
-              this.isAuthorized = true;
-            } else {
-              this.isLoginFailed = true;
-              this.router.navigate(['/rooms']);
-            }
-          });
-        } else {
-          this.isLoginFailed = true;
+          this.setupRoomConnection(response.model);
         }
-      },
-      error: () => {
-        this.isLoginFailed = true;
       },
     });
   }
@@ -251,7 +266,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   }
 
   public tryGetLastSolveFromRoomSolves(): void {
-    if (this.room.solves?.length) {
+    if (this.room?.solves?.length) {
       const currentSolve = this.room.solves.sort((one, two) =>
         one.solveNumber > two.solveNumber ? -1 : 1,
       )[0];
@@ -259,10 +274,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
         this.currentSolve = currentSolve;
         this.recalculateAverages();
       }
-      this.roomService.askForNewSolve(this.room.id);
-    } else {
-      this.roomService.forceNewSolve(this.room.id);
     }
+
+    this.roomService.askForNewSolve(this.room.id);
   }
 
   public getSolveProgressColor(): 'primary' | 'accent' | 'warn' {
@@ -299,6 +313,22 @@ export class RoomsComponent implements OnInit, OnDestroy {
     return toTime.transform(average);
   }
 
+  public forceNewSolve(): void {
+    this.roomService.forceNewSolve(this.room.id);
+  }
+
+  public joinRoomIfHasAccess(roomName: string): void {
+    this.roomService.checkAccessToRoom(roomName).subscribe({
+      next: (response: boolean) => {
+        if (response) {
+          this.loginAndConnectToRoom(roomName);
+        } else {
+          this.openRoomJoinDialog(roomName);
+        }
+      },
+    });
+  }
+
   public ngOnDestroy(): void {
     for (const sub of this.subs$) {
       sub.unsubscribe();
@@ -306,44 +336,59 @@ export class RoomsComponent implements OnInit, OnDestroy {
     this.roomService.leaveRoom(this.room.name);
   }
 
-  private async setupRoomConnection(roomName: string, roomId: string): Promise<any> {
-    await this.roomService.startConnection();
+  private setupRoomConnection(room: Room): void {
+    this.roomService
+      .startConnection()
+      .then(() => {
+        this.roomService.joinRoom(room.name);
+        this.isLoaded = true;
 
-    this.isLoaded = true;
-    this.roomService.joinRoom(roomName);
+        this.room = room;
+        this.tryGetLastSolveFromRoomSolves();
 
-    this.roomService.subscribeOnAllRoomEvents();
+        this.isAuthorized = true;
 
-    this.subs$.push(
-      this.roomService.users().subscribe({
-        next: (userName: string): void => {
-          if (!this.room.connectedUserNames.find((u: string) => u === userName)) {
-            this.room.connectedUserNames.push(userName);
-          }
-        },
-      }),
-      this.roomService.leftUsers().subscribe({
-        next: (userName: string): void => {
-          this.room.connectedUserNames = this.room.connectedUserNames.filter((u) => u !== userName);
-        },
-      }),
-      this.roomService.results().subscribe({
-        next: (result: SolveResult): void => {
-          this.appendNewUserResult(result);
+        this.roomService.subscribeOnAllRoomEvents();
 
-          if (result.userName === this.currentUserName) {
-            this.recalculateAverages();
-          }
-        },
-      }),
-      this.roomService.solveFinished().subscribe({
-        next: (result: Solve) => {
-          this.appendNewSolve(result);
-          this.resetSolveTimer();
-          this.startSolveTimer();
-        },
-      }),
-    );
+        this.subs$.push(
+          this.roomService.users().subscribe({
+            next: (userName: string): void => {
+              if (!this.room.connectedUserNames.find((u: string) => u === userName)) {
+                this.room.connectedUserNames.push(userName);
+              }
+            },
+          }),
+          this.roomService.leftUsers().subscribe({
+            next: (userName: string): void => {
+              this.room.connectedUserNames = this.room.connectedUserNames.filter(
+                (u) => u !== userName,
+              );
+            },
+          }),
+          this.roomService.results().subscribe({
+            next: (result: SolveResult): void => {
+              this.appendNewUserResult(result);
+
+              if (result.userName === this.currentUserName) {
+                this.recalculateAverages();
+              }
+            },
+          }),
+          this.roomService.solveFinished().subscribe({
+            next: (result: Solve) => {
+              this.appendNewSolve(result);
+
+              if (this.room?.settings?.enableSolveTimeLimit) {
+                this.resetSolveTimer();
+                this.startSolveTimer();
+              }
+            },
+          }),
+        );
+      })
+      .catch(() => {
+        this.router.navigate(['/rooms']);
+      });
   }
 
   private appendNewSolve(solve: Solve): void {
@@ -367,24 +412,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
     }
   }
 
-  private joinRoomIfHasAccess(roomName: string): void {
-    this.roomNameInput = roomName;
-    this.roomService.checkAccessToRoom(roomName).subscribe({
-      next: (response: boolean) => {
-        if (response) {
-          this.joinRoom();
-        } else {
-          this.loadAllRooms();
-          this.isLoaded = true;
-          this.roomNameInput = roomName;
-        }
-      },
-    });
-  }
-
   private loadAllRooms(): void {
     this.roomService.getAllRooms().subscribe({
-      next: (response: string[]): void => {
+      next: (response: RoomDisplayDataResponse[]): void => {
         this.availableRooms = response;
         this.isLoaded = true;
       },
@@ -396,7 +426,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
       if (this.timeToNextSolve > 0) {
         this.timeToNextSolve--;
       } else {
-        this.roomService.forceNewSolve(this.room.id);
+        this.roomService.askForNewSolve(this.room.id);
         this.timeToNextSolve = this.config.getTimeToNextSolve();
       }
     }, 1000);
@@ -410,6 +440,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   private recalculateAverages(): void {
     const toString = new MsToTimePipe();
     const mean = this.solveService.calculateMean(0, this.room.solves);
+
     if (mean > 0) {
       this.mean = toString.transform(mean);
     }
@@ -437,6 +468,4 @@ export class RoomsComponent implements OnInit, OnDestroy {
       }
     }
   }
-
-  protected readonly not = not;
 }

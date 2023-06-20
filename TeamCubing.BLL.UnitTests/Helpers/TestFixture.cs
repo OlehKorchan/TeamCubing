@@ -17,12 +17,27 @@ public static class TestFixture
         {
             Name = TestRoomName,
             Password = TestRoomPassword,
+            Settings = new RoomSettings
+            {
+                IsOpen = false,
+                UsersLimit = 3,
+                EnableSolveTimeLimit = true,
+            },
         };
     }
 
     public static RoomLoginRequest GetRoomLoginRequest()
     {
         return new RoomLoginRequest
+        {
+            RoomName = TestRoomName,
+            RoomPassword = TestRoomPassword,
+        };
+    }
+
+    public static RoomCreateRequest GetRoomCreateRequest()
+    {
+        return new RoomCreateRequest
         {
             RoomName = TestRoomName,
             RoomPassword = TestRoomPassword,

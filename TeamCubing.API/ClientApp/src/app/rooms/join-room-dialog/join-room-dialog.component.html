@@ -1,0 +1,21 @@
+<h3 mat-dialog-title>Join Room</h3>
+<div mat-dialog-content>
+  <p>
+    <mat-form-field appearance="outline">
+      <mat-label>Room Name</mat-label>
+      <input [value]="request.roomName" matInput placeholder="Name" disabled />
+    </mat-form-field>
+  </p>
+  <p>
+    <mat-form-field appearance="outline">
+      <mat-label>Room Password</mat-label>
+      <input [(ngModel)]="request.roomPassword" matInput placeholder="Password" type="password" />
+    </mat-form-field>
+  </p>
+  <div *ngIf="response && !response.isSuccess" class="text-danger mb-3">Invalid password</div>
+  <div class="row mb-3 justify-content-center">
+    <div class="col-md-4">
+      <button color="primary" mat-raised-button type="submit" (click)="onSubmit()">Join</button>
+    </div>
+  </div>
+</div>

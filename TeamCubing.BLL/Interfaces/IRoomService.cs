@@ -10,9 +10,9 @@ public interface IRoomService
 {
     Task<RoomCheckAccessResult> CheckAccessAsync(string roomName);
 
-    Task<ModelResponse<Room>> CreateRoomAsync(RoomLoginRequest loginDto);
+    Task<ModelResponse<Room>> CreateRoomAsync(RoomCreateRequest loginDto);
 
-    Task<List<string>> GetAllRoomNamesAsync();
+    Task<List<RoomDisplayDataResponse>> GetAllRoomsDataAsync();
 
     Task<List<string>> LeaveAllRoomsAsync();
 

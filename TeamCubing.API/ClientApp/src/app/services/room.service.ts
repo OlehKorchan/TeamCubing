@@ -7,6 +7,9 @@ import { HttpClient } from '@angular/common/http';
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
 import { ModelResponse } from '../models/modelResponse';
+import { RoomCreateRequest } from '../models/roomCreateRequest';
+import { RoomDisplayDataResponse } from '../models/roomDisplayDataResponse';
+import { RoomLoginRequest } from '../models/roomLoginRequest';
 
 @Injectable({
   providedIn: 'root',
@@ -50,7 +53,7 @@ export class RoomService {
     return this.solveFinished$.asObservable();
   }
 
-  public async startConnection(): Promise<any> {
+  public startConnection(): Promise<void> {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(this.config.getApiUrl() + this.hubEndpoint, {
         accessTokenFactory: () => this.auth.getToken(),
@@ -125,15 +128,17 @@ export class RoomService {
       .catch((err) => console.error(err));
   }
 
-  public getAllRooms(): Observable<string[]> {
-    return this.httpClient.get<string[]>(this.config.getApiUrl() + this.roomsEndpoint);
+  public getAllRooms(): Observable<RoomDisplayDataResponse[]> {
+    return this.httpClient.get<RoomDisplayDataResponse[]>(
+      this.config.getApiUrl() + this.roomsEndpoint,
+    );
   }
 
-  public createRoom(roomName: string, roomPassword: string): Observable<boolean> {
-    return this.httpClient.post<boolean>(this.config.getApiUrl() + this.roomsEndpoint, {
-      roomName: roomName,
-      roomPassword: roomPassword,
-    });
+  public createRoom(request: RoomCreateRequest): Observable<ModelResponse<Room>> {
+    return this.httpClient.post<ModelResponse<Room>>(
+      this.config.getApiUrl() + this.roomsEndpoint,
+      request,
+    );
   }
 
   public checkAccessToRoom(roomName: string): Observable<boolean> {
@@ -142,13 +147,10 @@ export class RoomService {
     );
   }
 
-  public loginToRoom(roomName: string, roomPassword: string): Observable<ModelResponse<Room>> {
+  public loginToRoom(request: RoomLoginRequest): Observable<ModelResponse<Room>> {
     return this.httpClient.post<ModelResponse<Room>>(
       this.config.getApiUrl() + this.roomsEndpoint + '/login',
-      {
-        roomName: roomName,
-        roomPassword: roomPassword,
-      },
+      request,
     );
   }
 

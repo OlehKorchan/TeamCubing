@@ -33,7 +33,7 @@ public class RoomRepository : IRoomRepository
         return (await _roomsContainer.UpsertItemAsync(room)).Resource;
     }
 
-    public Task UpsertManyAsync(IEnumerable<Room> rooms)
+    public Task ReplaceManyAsync(IEnumerable<Room> rooms)
     {
         var replacements = rooms.Select(room => _roomsContainer.ReplaceItemAsync(room, room.Id));
 

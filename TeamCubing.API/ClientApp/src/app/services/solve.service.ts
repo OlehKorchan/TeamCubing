@@ -2,6 +2,7 @@
 import { Solve, SolveResult } from '../models/solve';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
 import { ConfigurationService } from '../shared/services/configuration.service';
+import { RoomPuzzle } from '../models/roomSettings';
 
 @Injectable({
   providedIn: 'root',
@@ -45,7 +46,10 @@ export class SolveService {
     sum -= minValue;
     sum -= maxValue;
 
-    return sum / (count - 2);
+    return sum /
+      (
+        count - 2
+      );
   }
 
   public calculateMean(meanOf: number, solves: Solve[]): number {
@@ -68,10 +72,21 @@ export class SolveService {
     return sum / validResultsLength;
   }
 
+  public puzzleToString(puzzle: RoomPuzzle): string {
+    switch (puzzle) {
+      case RoomPuzzle.ThreeByThreeCube:
+        return '3x3';
+    }
+  }
+
   private pullCurrentUserValidResults(take: number, solves: Solve[]): SolveResult[] {
     const rightSolves = solves
-      .flatMap((s) => (s.results?.find((r) => r.userName === this.auth.getUserName()) ? s : []))
-      .sort((one, two) => (one.solveNumber < two.solveNumber ? -1 : 1))
+      .flatMap((s) => (
+        s.results?.find((r) => r.userName === this.auth.getUserName()) ? s : []
+      ))
+      .sort((one, two) => (
+        one.solveNumber < two.solveNumber ? -1 : 1
+      ))
       .slice(-take);
 
     return rightSolves.flatMap(

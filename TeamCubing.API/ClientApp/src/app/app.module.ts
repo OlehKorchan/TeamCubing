@@ -14,9 +14,20 @@ import { MsToTimePipe } from './pipes/ms-to-time.pipe';
 import { DialogComponent } from './dialog/dialog.component';
 import { RoomsComponent } from './rooms/rooms.component';
 import { RouterModule } from '@angular/router';
+import { CreateRoomDialogComponent } from './rooms/create-room-dialog/create-room-dialog.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { JoinRoomDialogComponent } from './rooms/join-room-dialog/join-room-dialog.component';
 
 @NgModule({
-  declarations: [AppComponent, TimerComponent, MsToTimePipe, DialogComponent, RoomsComponent],
+  declarations: [
+    AppComponent,
+    TimerComponent,
+    MsToTimePipe,
+    DialogComponent,
+    RoomsComponent,
+    CreateRoomDialogComponent,
+    JoinRoomDialogComponent,
+  ],
   imports: [
     SharedModule,
     MaterialModule,
@@ -26,6 +37,7 @@ import { RouterModule } from '@angular/router';
     BrowserAnimationsModule,
     LayoutModule,
     RouterModule,
+    MatTooltipModule,
   ],
   providers: [
     {

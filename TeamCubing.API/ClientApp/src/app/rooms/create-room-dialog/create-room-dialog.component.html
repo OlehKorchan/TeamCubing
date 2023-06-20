@@ -1,0 +1,58 @@
+<h1 mat-dialog-title>New Room</h1>
+<div mat-dialog-content>
+  <form (ngSubmit)="onSubmit()" [formGroup]="roomForm">
+    <p>
+      <mat-form-field>
+        <mat-label>Puzzle</mat-label>
+        <mat-select formControlName="puzzle">
+          <mat-option *ngFor="let puzzle of availablePuzzles" [value]="puzzle">
+            {{ solveService.puzzleToString(puzzle) }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </p>
+    <p>
+      <mat-form-field appearance="outline">
+        <mat-label>Room Name</mat-label>
+        <input formControlName="name" matInput placeholder="Name"/>
+        <mat-error *ngIf="roomForm.get('name')?.invalid"> Room name required</mat-error>
+      </mat-form-field>
+    </p>
+    <p>
+      <mat-checkbox formControlName="isOpen">Open room</mat-checkbox>
+    </p>
+    <p *ngIf="!roomForm.get('isOpen')?.value">
+      <mat-form-field appearance="outline">
+        <mat-label>Room Password</mat-label>
+        <input formControlName="password" matInput placeholder="Password" type="password"/>
+      </mat-form-field>
+    </p>
+    <p>
+      <mat-checkbox
+        formControlName="enableSolveDurationLimit"
+        matTooltip="Even if some members haven't posted result, new solve will be forced in 5 mins"
+      >
+        Enable solve duration limit
+      </mat-checkbox>
+    </p>
+    <p>
+      <mat-form-field>
+        <mat-label>Users limit</mat-label>
+        <input formControlName="maxUsers" matInput type="number"/>
+        <mat-error *ngIf="roomForm.get('maxUsers')?.invalid">
+          User limit should be from 1 to 5
+        </mat-error>
+      </mat-form-field>
+    </p>
+    <div *ngIf="response && !response.isSuccess" class="text-danger mb-3">
+      {{ response.errorMessage }}
+    </div>
+    <div class="row mb-3 justify-content-center">
+      <div class="col-md-4">
+        <button [disabled]="roomForm.invalid" color="primary" mat-raised-button type="submit">
+          Create
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

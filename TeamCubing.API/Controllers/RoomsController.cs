@@ -23,7 +23,7 @@ public class RoomsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllAsync()
     {
-        return Ok(await _roomService.GetAllRoomNamesAsync());
+        return Ok(await _roomService.GetAllRoomsDataAsync());
     }
 
     [HttpGet("leaveCurrentRoom")]
@@ -46,11 +46,11 @@ public class RoomsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAsync(RoomLoginRequest request)
+    public async Task<IActionResult> CreateAsync([FromBody] RoomCreateRequest request)
     {
         var result = await _roomService.CreateRoomAsync(request);
 
-        return Ok(result.IsSuccess);
+        return Ok(result);
     }
 
     [HttpPost("login")]

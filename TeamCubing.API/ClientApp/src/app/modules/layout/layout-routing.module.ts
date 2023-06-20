@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { TimerComponent } from '../../timer/timer.component';
 import { RoomsComponent } from '../../rooms/rooms.component';
 import { AuthenticationGuard } from '../authentication/guards/authentication.guard';
 

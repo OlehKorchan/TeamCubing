@@ -39,19 +39,34 @@ public class RoomService : IRoomService
             return RoomCheckAccessResult.NotFound;
         }
 
-        return room.ConnectedUserNames.Contains(_user.UserName) ||
+        return room.Settings.IsOpen ||
+               room.ConnectedUserNames.Contains(_user.UserName) ||
                room.WasOnceConnectedUserNames.Contains(_user.UserName)
             ? RoomCheckAccessResult.Authorized
             : RoomCheckAccessResult.Forbidden;
     }
 
-    public async Task<ModelResponse<Room>> CreateRoomAsync(RoomLoginRequest request)
+    public async Task<ModelResponse<Room>> CreateRoomAsync(RoomCreateRequest request)
     {
         var result = new ModelResponse<Room>();
-        if (string.IsNullOrEmpty(request.RoomName) || request.RoomPassword == null)
+        if (string.IsNullOrEmpty(request.RoomName))
         {
             // TODO: Move all hardcoded strings to messages class
-            result.ErrorMessage = "Invalid room name or password";
+            result.ErrorMessage = "Invalid room name";
+
+            return result;
+        }
+
+        request.Settings ??= new RoomSettings
+        {
+            IsOpen = false,
+            UsersLimit = 3,
+            EnableSolveTimeLimit = true,
+        };
+
+        if (!request.Settings.IsOpen && request.RoomPassword is null)
+        {
+            result.ErrorMessage = "Invalid room password";
 
             return result;
         }
@@ -71,6 +86,11 @@ public class RoomService : IRoomService
                 Id = Guid.NewGuid().ToString(),
                 Name = request.RoomName,
                 Password = request.RoomPassword,
+                Settings = request.Settings,
+                WasOnceConnectedUserNames = new List<string>
+                {
+                    _user.UserName,
+                },
             });
 
         _logger.LogInformation("Room Created: {SerializedResult}", room.ToJsonString());
@@ -112,10 +132,20 @@ public class RoomService : IRoomService
         return result;
     }
 
-    public async Task<List<string>> GetAllRoomNamesAsync()
+    public async Task<List<RoomDisplayDataResponse>> GetAllRoomsDataAsync()
     {
-        return (await _roomRepository.ReadAllAsync())
-            .Select(r => r.Name)
+        var allRooms = await _roomRepository.ReadAllAsync();
+
+        return allRooms
+            .Select(
+                r => new RoomDisplayDataResponse
+                {
+                    IsOpen = r.Settings.IsOpen,
+                    RoomName = r.Name,
+                    Puzzle = r.Settings.Puzzle,
+                    ConnectedUsersCount = r.ConnectedUserNames.Count,
+                    MaxUsersCount = r.Settings.UsersLimit,
+                })
             .ToList();
     }
 
@@ -125,7 +155,7 @@ public class RoomService : IRoomService
         var (validationResult, room) = await PerformRoomValidationAsync(request);
 
         if (!validationResult ||
-            IsLoginAttemptFailed(room, request.RoomPassword, out var isUserNeverJoined))
+            IsLoginForbidden(room, request.RoomPassword, out var isUserNeverJoined))
         {
             return result;
         }
@@ -144,7 +174,7 @@ public class RoomService : IRoomService
 
         if (isUserNeverJoined || isUserNotInRoom)
         {
-            await _roomRepository.UpsertAsync(room);
+            await _roomRepository.ReplaceAsync(room);
         }
 
         result.IsSuccess = true;
@@ -173,7 +203,7 @@ public class RoomService : IRoomService
 
                 roomSolve.Results.Add(newResult);
 
-                await _roomRepository.UpsertAsync(room);
+                await _roomRepository.ReplaceAsync(room);
 
                 _logger.LogInformation(
                     "New user result added {Result}",
@@ -194,7 +224,7 @@ public class RoomService : IRoomService
 
         roomsWithUser.ForEach(r => r.ConnectedUserNames.Remove(_user.UserName));
 
-        await _roomRepository.UpsertManyAsync(roomsWithUser);
+        await _roomRepository.ReplaceManyAsync(roomsWithUser);
 
         return roomsWithUser.Select(r => r.Name).ToList();
     }
@@ -212,7 +242,7 @@ public class RoomService : IRoomService
 
         room.Solves.Add(solve);
 
-        await _roomRepository.UpsertAsync(room);
+        await _roomRepository.ReplaceAsync(room);
 
         _logger.LogInformation(
             "Created solve: {Solve} in room: {RoomName}",
@@ -240,14 +270,15 @@ public class RoomService : IRoomService
         return room == null ? (false, null) : (true, room);
     }
 
-    private bool IsLoginAttemptFailed(
+    private bool IsLoginForbidden(
         Room room,
         string providedPassword,
         out bool isUserNeverJoined)
     {
         isUserNeverJoined = room.WasOnceConnectedUserNames.All(u => u != _user.UserName);
 
-        if (isUserNeverJoined && room.Password != providedPassword)
+        if ((!room.Settings.IsOpen && isUserNeverJoined && room.Password != providedPassword) ||
+            room.ConnectedUserNames.Count >= room.Settings.UsersLimit)
         {
             return true;
         }

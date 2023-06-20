@@ -1,5 +1,4 @@
-﻿using Microsoft.Azure.Cosmos;
-using TeamCubing.Domain.Models;
+﻿using TeamCubing.Domain.Models;
 
 namespace TeamCubing.DAL.Interfaces;
 
@@ -11,7 +10,7 @@ public interface IRoomRepository
 
     Task<Room> UpsertAsync(Room room);
 
-    Task UpsertManyAsync(IEnumerable<Room> rooms);
+    Task ReplaceManyAsync(IEnumerable<Room> rooms);
 
     Task<Room> ReadByIdAsync(string roomId);
 

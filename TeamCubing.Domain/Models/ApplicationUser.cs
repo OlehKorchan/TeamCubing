@@ -8,5 +8,5 @@ public class ApplicationUser : IdentityUser
 
     public string SecondName { get; set; }
 
-    public string RoomId { get; set; }
+    public string LastRoomName { get; set; }
 }
