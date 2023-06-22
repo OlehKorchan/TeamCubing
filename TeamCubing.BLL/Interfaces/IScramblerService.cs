@@ -1,6 +1,8 @@
-﻿namespace TeamCubing.BLL.Interfaces;
+﻿using TeamCubing.Domain.DTO;
+
+namespace TeamCubing.BLL.Interfaces;
 
 public interface IScramblerService
 {
-    string GenerateThreeByThreeScramble();
+    (string Scramble, PuzzleImage Image) GenerateThreeByThreeScrambleWithImage();
 }

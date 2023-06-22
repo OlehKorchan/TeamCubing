@@ -199,6 +199,7 @@ public class RoomService : IRoomService
                 {
                     UserName = _user.UserName,
                     Time = request.TimeInMilliseconds,
+                    Penalty = request.Penalty,
                 };
 
                 roomSolve.Results.Add(newResult);
@@ -233,11 +234,14 @@ public class RoomService : IRoomService
     {
         var nextSolveNumber = room.Solves.Count + 1;
 
+        var (scramble, image) = _scramblerService.GenerateThreeByThreeScrambleWithImage();
+
         var solve = new Solve
         {
             SolveNumber = nextSolveNumber,
-            Scramble = _scramblerService.GenerateThreeByThreeScramble(),
+            Scramble = scramble,
             StartTime = DateTime.UtcNow,
+            ScrambledPuzzleImage = image,
         };
 
         room.Solves.Add(solve);

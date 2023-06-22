@@ -17,6 +17,7 @@ import { RouterModule } from '@angular/router';
 import { CreateRoomDialogComponent } from './rooms/create-room-dialog/create-room-dialog.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { JoinRoomDialogComponent } from './rooms/join-room-dialog/join-room-dialog.component';
+import { CubeImageComponent } from './cube-image/cube-image.component';
 
 @NgModule({
   declarations: [
@@ -27,6 +28,7 @@ import { JoinRoomDialogComponent } from './rooms/join-room-dialog/join-room-dial
     RoomsComponent,
     CreateRoomDialogComponent,
     JoinRoomDialogComponent,
+    CubeImageComponent,
   ],
   imports: [
     SharedModule,

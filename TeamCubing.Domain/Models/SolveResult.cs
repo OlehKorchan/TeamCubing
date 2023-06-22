@@ -9,4 +9,7 @@ public class SolveResult
 
     [JsonProperty("time")]
     public int Time { get; set; }
+
+    [JsonProperty("penalty")]
+    public Penalty Penalty { get; set; }
 }

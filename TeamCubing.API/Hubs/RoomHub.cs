@@ -24,7 +24,11 @@ public class RoomHub : Hub
         _logger = logger;
     }
 
-    public async Task NewResult(string roomId, int solveNumber, int timeMilliseconds)
+    public async Task NewResult(
+        string roomId,
+        int solveNumber,
+        int timeMilliseconds,
+        Penalty penalty)
     {
         var response = await _roomService.AddUserResultAsync(
             new NewUserResultRequest
@@ -32,6 +36,7 @@ public class RoomHub : Hub
                 RoomId = roomId,
                 SolveNumber = solveNumber,
                 TimeInMilliseconds = timeMilliseconds,
+                Penalty = penalty,
             });
 
         if (response.IsSuccess)

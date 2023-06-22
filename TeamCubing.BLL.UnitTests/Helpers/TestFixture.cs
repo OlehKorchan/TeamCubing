@@ -1,4 +1,5 @@
-﻿using TeamCubing.Domain.Models;
+﻿using TeamCubing.Domain.DTO;
+using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 
 namespace TeamCubing.BLL.Tests.Helpers;
@@ -93,6 +94,22 @@ public static class TestFixture
         return new Solve
         {
             Scramble = "R U R U L U L U",
+            ScrambledPuzzleImage = new PuzzleImage
+            {
+                Faces = new CubeFace[]
+                {
+                    new()
+                    {
+                        Colors = new[]
+                        {
+                            new[]
+                            {
+                                Color.White,
+                            },
+                        },
+                    },
+                },
+            },
             SolveNumber = 1,
             StartTime = DateTime.UtcNow,
         };

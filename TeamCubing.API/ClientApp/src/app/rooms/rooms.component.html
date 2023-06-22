@@ -16,62 +16,29 @@
           </div>
           <app-timer
             (timerStopped)="onTimerResult($event)"
+            [puzzleImage]="currentSolve.scrambledPuzzleImage"
             [scramble]="currentSolve.scramble"
-            [timeChanged]="timeChanged.asObservable()"
+            [reset]="reset"
+            (penaltySet)="onPenalty($event)"
           ></app-timer>
-          <div *ngIf="isSolveFinished" class="row-cols-3 justify-content-center text-center">
-            <button
-              (click)="sendResult()"
-              class="col-sm-4 col-md-3 mt-3 mx-2"
-              color="primary"
-              mat-raised-button
-            >
-              Send
-            </button>
-            <button
-              (click)="plusTwoSolve()"
-              *ngIf="!isSolvePlusTwo && !isSolveDnf"
-              class="col-sm-4 col-md-3 mt-3 mx-2"
-              color="accent"
-              mat-raised-button
-            >
-              +2
-            </button>
-            <button
-              (click)="dnfSolve()"
-              *ngIf="!isSolvePlusTwo && !isSolveDnf"
-              class="col-sm-4 col-md-3 mt-3 mx-2"
-              color="warn"
-              mat-raised-button
-            >
-              DNF
-            </button>
-            <button
-              (click)="disablePlusTwoSolve()"
-              *ngIf="isSolvePlusTwo"
-              class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
-              color="accent"
-              mat-raised-button
-            >
-              remove +2
-            </button>
-            <button
-              (click)="disableDnfSolve()"
-              *ngIf="isSolveDnf"
-              class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
-              color="warn"
-              mat-raised-button
-            >
-              remove DNF
-            </button>
-          </div>
+          <button
+            (click)="sendResult()"
+            class="col-sm-4 col-md-3 mt-3 mx-2"
+            color="primary"
+            mat-raised-button
+          >
+            Send result
+          </button>
         </div>
         <div class="col-md-4 col-sm-12 mt-3">
           <mat-card>
             <mat-card-content>
               <h3>
                 <div class="row align-items-end">
-                  <p>Mean: {{ mean }} Best: {{ bestUserResult().time | msToTime }}</p>
+                  <p>
+                    Mean: {{ mean }} Best:
+                    {{ solveService.bestUserSolve(currentUserName, room.solves).time | msToTime }}
+                  </p>
                   <p>
                     <span *ngFor="let avg of notEmptyAverages">
                       Ao{{ avg.ao }}: {{ avg.time }} /
@@ -90,7 +57,7 @@
                     </div>
                     <div
                       *ngFor="let solve of room.solves"
-                      [style.color]="isBestUserSolve(user, solve) ? 'red' : 'black'"
+                      [style.color]="getUserSolveColor(user, solve)"
                       class="row font-medium"
                     >
                       {{ getUserSolveTime(user, solve) }}
@@ -103,7 +70,7 @@
         </div>
       </div>
       <ng-template #roomLogin>
-        <button (click)="createNewRoom()" color="accent" mat-raised-button class="mx-2">
+        <button (click)="createNewRoom()" class="mx-2" color="accent" mat-raised-button>
           Create new room
         </button>
         <button (click)="ngOnInit()" color="primary" mat-raised-button>Reload</button>

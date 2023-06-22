@@ -1,9 +1,9 @@
 import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
-import { Solve, SolveResult } from '../models/solve';
+import { Penalty, Solve, SolveResult } from '../models/solve';
 import { RoomService } from '../services/room.service';
 import { Room } from '../models/room';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { Location } from '@angular/common';
 import { ConfigurationService } from '../shared/services/configuration.service';
 import { NgxSpinnerService } from 'ngx-spinner';
@@ -18,6 +18,7 @@ import { RoomLoginRequest } from '../models/roomLoginRequest';
 import { RoomDisplayDataResponse } from '../models/roomDisplayDataResponse';
 import { RoomPuzzle } from '../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
+import Utils from '../shared/utils';
 
 @Component({
   selector: 'app-rooms',
@@ -46,18 +47,16 @@ export class RoomsComponent implements OnInit, OnDestroy {
     results: [],
     solveNumber: 0,
     scramble: 'SCRAMBLE GENERATING',
+    scrambledPuzzleImage: Utils.threeByThreeSolvedImage,
     startTime: new Date(),
   };
   public currentTime: number = 0;
+  public currentPenalty: Penalty = Penalty.NoPenalty;
 
   public availableRooms: RoomDisplayDataResponse[] = [];
+  public reset: Subject<void> = new Subject<void>();
 
   public subs$: Subscription[] = [];
-
-  public timeChanged: EventEmitter<number> = new EventEmitter<number>();
-
-  public isSolvePlusTwo: boolean = false;
-  public isSolveDnf: boolean = false;
 
   public timeToNextSolve: number = 0;
   public mean: string = 'n/a';
@@ -111,33 +110,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
     });
   }
 
-  public bestUserResult(user: string = ''): SolveResult {
-    if (user === '') {
-      user = this.currentUserName;
-    }
-
-    const result = this.room.solves
-      ?.flatMap((s) => {
-        return s.results?.find((r) => r.userName === user && r.time > 0);
-      })
-      ?.sort((one, two) => {
-        if (one?.time && two?.time) {
-          return one?.time > two?.time ? 1 : -1;
-        }
-
-        return 1;
-      })[0];
-
-    if (result) {
-      return result;
-    }
-
-    return {
-      time: 0,
-      userName: user,
-    };
-  }
-
   public createNewRoom(): void {
     const dialogItem = this.dialog.open(CreateRoomDialogComponent, {
       width: '300px',
@@ -188,30 +160,49 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
   public sendResult(): void {
     if (this.currentSolve) {
-      this.roomService.sendResult(this.room.id, this.currentSolve.solveNumber, this.currentTime);
+      this.roomService.sendResult(
+        this.room.id,
+        this.currentSolve.solveNumber,
+        this.currentTime,
+        this.currentPenalty,
+      );
       this.isSolveFinished = false;
     } else {
       console.error('Current solve empty');
     }
   }
 
-  public isBestUserSolve(userName: string, solve: Solve): boolean {
-    const bestResult = this.bestUserResult(userName);
+  public getUserSolveColor(user: string, solve: Solve): 'red' | 'green' | 'black' {
+    const userResults = this.solveService.getNonDnfUserResultsSorted(
+      this.room.solves,
+      user,
+      'ascending',
+    );
+    const bestResult = userResults[0];
+    const worstResult = userResults.at(-1);
 
-    const currentResult = solve.results?.find((s) => s.userName === userName)?.time;
+    const currentResult = solve.results?.find((s) => s.userName === user)?.time;
 
-    if (bestResult && currentResult) {
-      return bestResult.time === currentResult;
+    if (currentResult) {
+      if (bestResult?.time === currentResult) {
+        return 'green';
+      }
+
+      if (worstResult?.time === currentResult) {
+        return 'red';
+      }
     }
 
-    return false;
+    return 'black';
   }
 
   public getUserSolveTime(userName: string, solve: Solve): string {
-    const solveTime = solve.results?.find((s: SolveResult) => s.userName === userName)?.time;
-    if (solveTime) {
+    const result = solve.results?.find((s: SolveResult) => s.userName === userName);
+    if (result?.time) {
       const msToTimePipe = new MsToTimePipe();
-      return msToTimePipe.transform(solveTime);
+      const isDnf = result.penalty === Penalty.DNF;
+
+      return msToTimePipe.transform(result.time, isDnf);
     }
 
     return this.emptyTime;
@@ -228,48 +219,25 @@ export class RoomsComponent implements OnInit, OnDestroy {
     });
   }
 
-  public dnfSolve(): void {
-    if (!this.isSolvePlusTwo && !this.isSolveDnf) {
-      this.currentTime = -this.currentTime;
-      this.timeChanged.next(this.currentTime);
-      this.isSolveDnf = true;
-    }
-  }
-
-  public disableDnfSolve(): void {
-    if (this.isSolveDnf) {
-      this.isSolveDnf = false;
-      this.currentTime = -this.currentTime;
-      this.timeChanged.next(this.currentTime);
-    }
-  }
-
-  public plusTwoSolve(): void {
-    if (!this.isSolvePlusTwo && !this.isSolveDnf) {
+  public onPenalty($event: Penalty): void {
+    if ($event === Penalty.PlusTwo) {
       this.currentTime += 2000;
-      this.timeChanged.next(this.currentTime);
-      this.isSolvePlusTwo = true;
-    }
-  }
-
-  public disablePlusTwoSolve(): void {
-    if (this.isSolvePlusTwo) {
+    } else if ($event === Penalty.NoPenalty && this.currentPenalty === Penalty.PlusTwo) {
       this.currentTime -= 2000;
-      this.timeChanged.next(this.currentTime);
-      this.isSolvePlusTwo = false;
     }
+
+    this.currentPenalty = $event;
   }
 
   public onTimerResult($event: number): void {
     this.currentTime = $event;
     this.isSolveFinished = true;
+    this.currentPenalty = Penalty.NoPenalty;
   }
 
   public tryGetLastSolveFromRoomSolves(): void {
     if (this.room?.solves?.length) {
-      const currentSolve = this.room.solves.sort((one, two) =>
-        one.solveNumber > two.solveNumber ? -1 : 1,
-      )[0];
+      const currentSolve = this.room.solves[0];
       if (currentSolve) {
         this.currentSolve = currentSolve;
         this.recalculateAverages();
@@ -287,30 +255,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
     } else {
       return 'warn';
     }
-  }
-
-  public getMean(): string {
-    const mean = this.solveService.calculateMean(0, this.room.solves);
-
-    if (mean <= 0) {
-      return 'n/a';
-    }
-
-    const toTime = new MsToTimePipe();
-
-    return toTime.transform(mean);
-  }
-
-  public getAverage(n: number): string {
-    const average = this.solveService.calculateAverage(n, this.room.solves);
-
-    if (average <= 0) {
-      return 'n/a';
-    }
-
-    const toTime = new MsToTimePipe();
-
-    return toTime.transform(average);
   }
 
   public forceNewSolve(): void {
@@ -344,6 +288,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
         this.isLoaded = true;
 
         this.room = room;
+        this.room.solves = room.solves.sort((one, two) =>
+          one.solveNumber > two.solveNumber ? -1 : 1,
+        );
         this.tryGetLastSolveFromRoomSolves();
 
         this.isAuthorized = true;
@@ -393,10 +340,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
   private appendNewSolve(solve: Solve): void {
     this.isSolveFinished = false;
-    this.isSolveDnf = false;
-    this.isSolvePlusTwo = false;
+    this.currentPenalty = Penalty.NoPenalty;
     this.currentTime = 0;
-    this.timeChanged.emit(this.currentTime);
+    this.reset.next();
 
     this.currentSolve = solve;
     this.room.solves.unshift(solve);
@@ -441,9 +387,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
     const toString = new MsToTimePipe();
     const mean = this.solveService.calculateMean(0, this.room.solves);
 
-    if (mean > 0) {
-      this.mean = toString.transform(mean);
-    }
+    this.mean = toString.transform(mean);
 
     for (const n of [5, 12, 50, 100]) {
       const aoN = this.solveService.calculateAverage(n, this.room.solves);
@@ -457,8 +401,12 @@ export class RoomsComponent implements OnInit, OnDestroy {
         this.averages.push(avg);
       }
 
-      if (aoN === this.config.dnfValue || aoN > 0) {
+      if (aoN === this.config.dnfValue) {
         avg.isOn = true;
+        avg.time = toString.transform(aoN, true, true);
+      } else if (aoN > 0) {
+        avg.isOn = true;
+
         avg.time = toString.transform(aoN);
       } else {
         avg.isOn = false;

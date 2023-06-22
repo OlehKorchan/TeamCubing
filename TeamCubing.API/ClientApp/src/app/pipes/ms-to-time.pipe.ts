@@ -4,9 +4,13 @@ import { Pipe, PipeTransform } from '@angular/core';
   name: 'msToTime',
 })
 export class MsToTimePipe implements PipeTransform {
-  public transform(milliseconds: number): string {
-    if (milliseconds < 0) {
-      return '(' + this.transformMsToTime(-milliseconds) + ') DNF';
+  public transform(milliseconds: number, isDnf = false, isAverageDnf = false): string {
+    if (isAverageDnf) {
+      return 'DNF';
+    }
+
+    if (isDnf) {
+      return '(' + this.transformMsToTime(milliseconds) + ') DNF';
     }
 
     return this.transformMsToTime(milliseconds);

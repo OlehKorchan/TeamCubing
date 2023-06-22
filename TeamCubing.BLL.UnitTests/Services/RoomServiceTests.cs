@@ -166,15 +166,15 @@ public class RoomServiceTests
             .ReturnsAsync(testRoom);
 
         _scramblerMock
-            .Setup(m => m.GenerateThreeByThreeScramble())
-            .Returns(expectedSolve.Scramble);
+            .Setup(m => m.GenerateThreeByThreeScrambleWithImage())
+            .Returns((expectedSolve.Scramble, expectedSolve.ScrambledPuzzleImage));
 
         // Act
         var actual = await _sut.PushSolveToRoomAsync(testRoom.Id, false);
 
         // Assert
         _roomRepositoryMock.Verify(m => m.ReadByIdAsync(testRoom.Id), Times.Once);
-        _scramblerMock.Verify(m => m.GenerateThreeByThreeScramble(), Times.Once);
+        _scramblerMock.Verify(m => m.GenerateThreeByThreeScrambleWithImage(), Times.Once);
         actual.IsSuccess.Should().BeTrue();
         actual.RoomName.Should().BeEquivalentTo(testRoom.Name);
         actual.Model.Scramble.Should().BeEquivalentTo(expectedSolve.Scramble);
@@ -195,7 +195,7 @@ public class RoomServiceTests
 
         // Assert
         _roomRepositoryMock.Verify(m => m.ReadByIdAsync(testRoom.Id), Times.Once);
-        _scramblerMock.Verify(m => m.GenerateThreeByThreeScramble(), Times.Never);
+        _scramblerMock.Verify(m => m.GenerateThreeByThreeScrambleWithImage(), Times.Never);
         actual.IsSuccess.Should().BeFalse();
         actual.RoomName.Should().BeEquivalentTo(testRoom.Name);
         actual.Model.Should().BeNull();
@@ -216,7 +216,7 @@ public class RoomServiceTests
         _roomRepositoryMock.Verify(
             m => m.ReadByIdAsync(It.IsAny<string>()),
             Times.Once);
-        _scramblerMock.Verify(m => m.GenerateThreeByThreeScramble(), Times.Never);
+        _scramblerMock.Verify(m => m.GenerateThreeByThreeScrambleWithImage(), Times.Never);
         actual.IsSuccess.Should().BeFalse();
         actual.RoomName.Should().BeNullOrEmpty();
         actual.Model.Should().BeNull();
@@ -234,15 +234,15 @@ public class RoomServiceTests
             .Setup(m => m.ReadByIdAsync(testRoom.Id))
             .ReturnsAsync(testRoom);
         _scramblerMock
-            .Setup(m => m.GenerateThreeByThreeScramble())
-            .Returns(expectedSolve.Scramble);
+            .Setup(m => m.GenerateThreeByThreeScrambleWithImage())
+            .Returns((expectedSolve.Scramble, expectedSolve.ScrambledPuzzleImage));
 
         // Act
         var actual = await _sut.PushSolveToRoomAsync(testRoom.Id, true);
 
         // Assert
         _roomRepositoryMock.Verify(m => m.ReadByIdAsync(testRoom.Id), Times.Once);
-        _scramblerMock.Verify(m => m.GenerateThreeByThreeScramble(), Times.Once);
+        _scramblerMock.Verify(m => m.GenerateThreeByThreeScrambleWithImage(), Times.Once);
         actual.IsSuccess.Should().BeTrue();
         actual.RoomName.Should().BeEquivalentTo(testRoom.Name);
         actual.Model.Scramble.Should().BeEquivalentTo(expectedSolve.Scramble);
@@ -264,7 +264,7 @@ public class RoomServiceTests
         _roomRepositoryMock.Verify(
             m => m.ReadByIdAsync(It.IsAny<string>()),
             Times.Once);
-        _scramblerMock.Verify(m => m.GenerateThreeByThreeScramble(), Times.Never);
+        _scramblerMock.Verify(m => m.GenerateThreeByThreeScrambleWithImage(), Times.Never);
         actual.IsSuccess.Should().BeFalse();
         actual.RoomName.Should().BeNullOrEmpty();
         actual.Model.Should().BeNull();
@@ -275,14 +275,15 @@ public class RoomServiceTests
     {
         // Arrange
         var testRooms = new List<Room> { TestFixture.GetEmptyRoom() };
-        var expected = testRooms.Select(r => new RoomDisplayDataResponse
-        {
-            RoomName = r.Name,
-            IsOpen = r.Settings.IsOpen,
-            Puzzle = r.Settings.Puzzle,
-            ConnectedUsersCount = r.ConnectedUserNames.Count,
-            MaxUsersCount = r.Settings.UsersLimit,
-        });
+        var expected = testRooms.Select(
+            r => new RoomDisplayDataResponse
+            {
+                RoomName = r.Name,
+                IsOpen = r.Settings.IsOpen,
+                Puzzle = r.Settings.Puzzle,
+                ConnectedUsersCount = r.ConnectedUserNames.Count,
+                MaxUsersCount = r.Settings.UsersLimit,
+            });
 
         _roomRepositoryMock
             .Setup(m => m.ReadAllAsync())

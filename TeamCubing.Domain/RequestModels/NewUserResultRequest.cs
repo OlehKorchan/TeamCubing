@@ -1,4 +1,6 @@
-﻿namespace TeamCubing.Domain.RequestModels;
+﻿using TeamCubing.Domain.Models;
+
+namespace TeamCubing.Domain.RequestModels;
 
 public class NewUserResultRequest
 {
@@ -7,4 +9,6 @@ public class NewUserResultRequest
     public int SolveNumber { get; set; }
 
     public int TimeInMilliseconds { get; set; }
+
+    public Penalty Penalty { get; set; }
 }

@@ -1,7 +1,7 @@
 import { EventEmitter, Injectable } from '@angular/core';
 import { ConfigurationService } from '../shared/services/configuration.service';
 import { Observable, Subject } from 'rxjs';
-import { Solve, SolveResult } from '../models/solve';
+import { Penalty, Solve, SolveResult } from '../models/solve';
 import { Room } from '../models/room';
 import { HttpClient } from '@angular/common/http';
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
@@ -98,9 +98,14 @@ export class RoomService {
     });
   }
 
-  public sendResult(roomId: string, solveNumber: number, timeMilliseconds: number): void {
+  public sendResult(
+    roomId: string,
+    solveNumber: number,
+    timeMilliseconds: number,
+    penalty: Penalty,
+  ): void {
     this.hubConnection
-      .invoke(this.resultsMethodName, roomId, solveNumber, timeMilliseconds)
+      .invoke(this.resultsMethodName, roomId, solveNumber, timeMilliseconds, penalty)
       .catch((err) => console.error(err));
   }
 

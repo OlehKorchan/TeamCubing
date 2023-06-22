@@ -1,5 +1,5 @@
 ﻿import { Injectable } from '@angular/core';
-import { Solve, SolveResult } from '../models/solve';
+import { Penalty, Solve, SolveResult } from '../models/solve';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
 import { ConfigurationService } from '../shared/services/configuration.service';
 import { RoomPuzzle } from '../models/roomSettings';
@@ -11,31 +11,34 @@ export class SolveService {
   public constructor(private auth: AuthenticationService, private config: ConfigurationService) {}
 
   public calculateAverage(averageOf: number, solves: Solve[]): number {
-    const avgResults = this.pullCurrentUserValidResults(averageOf, solves);
+    const avgResults = this.pullUserValidResults(averageOf, solves, this.auth.getUserName());
 
     const size = avgResults.length;
     if (size < averageOf) {
       return 0;
     }
 
-    let minValue = avgResults[0].time;
-    let maxValue = avgResults[0].time;
+    let minValue = Number.MAX_VALUE;
+    let maxValue = -1;
     let sum = 0;
     let count = 0;
 
     let dnfCount = 0;
 
     for (const result of avgResults) {
-      sum += Math.abs(result.time);
+      sum += result.time;
       count++;
 
-      if (result.time < 0) {
+      if (result.penalty === Penalty.DNF) {
         dnfCount++;
-        maxValue = Math.abs(result.time);
-      } else if (result.time < minValue) {
-        minValue = result.time;
-      } else if (dnfCount === 0 && result.time > maxValue) {
         maxValue = result.time;
+      } else {
+        if (result.time < minValue) {
+          minValue = result.time;
+        }
+        if (result.time > maxValue) {
+          maxValue = result.time;
+        }
       }
     }
 
@@ -46,14 +49,11 @@ export class SolveService {
     sum -= minValue;
     sum -= maxValue;
 
-    return sum /
-      (
-        count - 2
-      );
+    return sum / (count - 2);
   }
 
   public calculateMean(meanOf: number, solves: Solve[]): number {
-    const results = this.pullCurrentUserValidResults(meanOf, solves);
+    const results = this.pullUserValidResults(meanOf, solves, this.auth.getUserName());
     const size = results.length;
     if (meanOf !== 0 && size < meanOf) {
       return 0;
@@ -72,6 +72,20 @@ export class SolveService {
     return sum / validResultsLength;
   }
 
+  public bestUserSolve(user: string, solves: Solve[]): SolveResult {
+    const results = this.getNonDnfUserResultsSorted(solves, user, 'ascending');
+
+    if (results?.length) {
+      return results[0];
+    }
+
+    return {
+      time: 0,
+      userName: user,
+      penalty: Penalty.NoPenalty,
+    };
+  }
+
   public puzzleToString(puzzle: RoomPuzzle): string {
     switch (puzzle) {
       case RoomPuzzle.ThreeByThreeCube:
@@ -79,18 +93,29 @@ export class SolveService {
     }
   }
 
-  private pullCurrentUserValidResults(take: number, solves: Solve[]): SolveResult[] {
-    const rightSolves = solves
-      .flatMap((s) => (
-        s.results?.find((r) => r.userName === this.auth.getUserName()) ? s : []
-      ))
-      .sort((one, two) => (
-        one.solveNumber < two.solveNumber ? -1 : 1
-      ))
-      .slice(-take);
+  public getNonDnfUserResultsSorted(
+    solves: Solve[],
+    user: string,
+    order: 'ascending' | 'descending',
+  ): SolveResult[] {
+    return solves
+      ?.flatMap((s) => {
+        return s.results?.find((r) => r.userName === user && r.time > 0) ?? [];
+      })
+      ?.sort((one, two) => {
+        if (order === 'ascending') {
+          return one?.time > two?.time ? 1 : -1;
+        }
 
-    return rightSolves.flatMap(
-      (s) => s.results.find((r) => r.userName === this.auth.getUserName()) ?? [],
-    );
+        return one?.time > two?.time ? -1 : 1;
+      });
+  }
+
+  private pullUserValidResults(take: number, solves: Solve[], user: string): SolveResult[] {
+    return solves
+      .slice()
+      .sort((one, two) => (one.solveNumber < two.solveNumber ? -1 : 1))
+      .flatMap((s) => s.results?.find((r) => r.userName === user) ?? [])
+      .slice(-take);
   }
 }
