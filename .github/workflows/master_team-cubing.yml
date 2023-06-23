@@ -24,7 +24,7 @@ jobs:
 
       - name: Build with dotnet
         run: |
-          cd src
+          cd TeamCubing/src
           dotnet build --configuration Release
           dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
