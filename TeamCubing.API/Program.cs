@@ -34,8 +34,7 @@ builder.Services.AddCors(
             new CorsPolicyBuilder()
                 .WithOrigins(
                     "https://localhost:44420",
-                    "http://teamcubing.somee.com",
-                    "https://teamcubing.azurewebsites.net/")
+                    "https://team-cubing.azurewebsites.net/")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials()
