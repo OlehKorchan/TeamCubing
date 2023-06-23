@@ -21,10 +21,11 @@ using TeamCubing.Domain.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog(
-    (_, lc) => lc
-        .WriteTo.Console()
-        .WriteTo.Seq("https://teamcubing-logs.azurewebsites.net"));
+builder.Host.ConfigureLogging(cfg => cfg.ClearProviders())
+    .UseSerilog(
+        (_, lc) => lc
+            .WriteTo.Console()
+            .WriteTo.Seq("https://teamcubing-logs.azurewebsites.net"));
 
 builder.Services.AddCors(
     options =>
