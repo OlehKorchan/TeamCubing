@@ -1,13 +1,20 @@
-import { Component, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { Observable, Subject, Subscription, timer } from 'rxjs';
-import { MsToTimePipe } from '../pipes/ms-to-time.pipe';
-import { PuzzleImage } from '../models/puzzles/puzzleImage';
+// noinspection SpellCheckingInspection
+
+import {Component, HostListener, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Observable, Subject, Subscription, timer} from 'rxjs';
+import {MsToTimePipe} from '../pipes/ms-to-time.pipe';
+import {PuzzleImage} from '../models/puzzles/puzzleImage';
 import Utils from '../shared/utils';
-import { Penalty } from '../models/solve';
+import {Penalty} from '../models/solve';
 
 export enum BackgroundColors {
   Red = 'bg-red',
   Green = 'bg-green',
+}
+
+export enum TimingMode {
+  Timer,
+  Manual
 }
 
 @Component({
@@ -40,6 +47,10 @@ export class TimerComponent implements OnInit, OnDestroy {
 
   public currentPenalty: Penalty = Penalty.NoPenalty;
 
+  public timingMode = TimingMode;
+
+  public currentTimingMode: TimingMode = TimingMode.Timer;
+
   public isRunning: boolean = false;
   public isTimerStopped: boolean = false;
 
@@ -48,11 +59,7 @@ export class TimerComponent implements OnInit, OnDestroy {
   public ngOnInit(): void {
     this.resetSub = this.reset.subscribe({
       next: () => {
-        this.currentPenalty = Penalty.NoPenalty;
-        this.isRunning = false;
-        this.isTimerStopped = false;
-        this.backgroundColorClass = '';
-        this.timeInMilliseconds = 0;
+        this.fullReset()
       },
     });
     timer(0, this.timerStep).subscribe(() => {
@@ -122,6 +129,18 @@ export class TimerComponent implements OnInit, OnDestroy {
     return this.currentPenalty === Penalty.PlusTwo;
   }
 
+  public isTimerMode(): boolean {
+    return this.currentTimingMode === TimingMode.Timer;
+  }
+
+  public sendManualTime(): void {
+    // Manual time entered as microseconds
+    this.timerStopped.next(this.timeInMilliseconds * 10);
+
+    this.resetTimerState();
+    this.isTimerStopped = true;
+  }
+
   private startTimer(): void {
     this.timeInMilliseconds = 0;
     this.isRunning = true;
@@ -130,12 +149,22 @@ export class TimerComponent implements OnInit, OnDestroy {
   }
 
   private stopTimer(): void {
-    this.currentPenalty = Penalty.NoPenalty;
-
-    this.isRunning = false;
-    this.isTimerStopped = true;
-    this.backgroundColorClass = '';
     this.timerStopped.next(this.timeInMilliseconds);
+
+    this.resetTimerState();
+    this.isTimerStopped = true;
+  }
+
+  private fullReset(): void {
+    this.resetTimerState();
+    this.timeInMilliseconds = 0;
+  }
+
+  private resetTimerState(): void {
+    this.currentPenalty = Penalty.NoPenalty;
+    this.isRunning = false;
+    this.isTimerStopped = false;
+    this.backgroundColorClass = '';
   }
 
   public ngOnDestroy() {
