@@ -36,7 +36,7 @@ export class SolveService {
         if (result.time < minValue) {
           minValue = result.time;
         }
-        if (result.time > maxValue) {
+        if (dnfCount === 0 && result.time > maxValue) {
           maxValue = result.time;
         }
       }
@@ -63,7 +63,7 @@ export class SolveService {
     let validResultsLength = 0;
 
     for (const result of results) {
-      if (result.time > 0) {
+      if (result.penalty !== Penalty.DNF) {
         sum += result.time;
         validResultsLength++;
       }
@@ -100,7 +100,7 @@ export class SolveService {
   ): SolveResult[] {
     return solves
       ?.flatMap((s) => {
-        return s.results?.find((r) => r.userName === user && r.time > 0) ?? [];
+        return s.results?.find((r) => r.userName === user && r.penalty !== Penalty.DNF) ?? [];
       })
       ?.sort((one, two) => {
         if (order === 'ascending') {

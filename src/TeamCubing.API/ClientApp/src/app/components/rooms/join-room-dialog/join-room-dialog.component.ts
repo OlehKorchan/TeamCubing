@@ -1,8 +1,8 @@
 import { Component, Inject } from '@angular/core';
-import { RoomLoginRequest } from '../../models/roomLoginRequest';
-import { ModelResponse } from '../../models/modelResponse';
-import { Room } from '../../models/room';
-import { RoomService } from '../../services/room.service';
+import { RoomLoginRequest } from '../../../models/roomLoginRequest';
+import { ModelResponse } from '../../../models/modelResponse';
+import { Room } from '../../../models/room';
+import { RoomService } from '../../../services/room.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 export interface DialogData {

@@ -1,24 +1,25 @@
-import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
-import { Penalty, Solve, SolveResult } from '../models/solve';
-import { RoomService } from '../services/room.service';
-import { Room } from '../models/room';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Penalty, Solve, SolveResult } from '../../models/solve';
+import { RoomService } from '../../services/room.service';
+import { Room } from '../../models/room';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { Location } from '@angular/common';
-import { ConfigurationService } from '../shared/services/configuration.service';
+import { ConfigurationService } from '../../shared/services/configuration.service';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { ModelResponse } from '../models/modelResponse';
-import { AuthenticationService } from '../modules/authentication/services/authentication.service';
-import { MsToTimePipe } from '../pipes/ms-to-time.pipe';
-import { SolveService } from '../services/solve.service';
+import { ModelResponse } from '../../models/modelResponse';
+import { AuthenticationService } from '../../modules/authentication/services/authentication.service';
+import { MsToTimePipe } from '../../pipes/ms-to-time.pipe';
+import { SolveService } from '../../services/solve.service';
 import { not } from 'rxjs/internal/util/not';
 import { MatDialog } from '@angular/material/dialog';
 import { CreateRoomDialogComponent } from './create-room-dialog/create-room-dialog.component';
-import { RoomLoginRequest } from '../models/roomLoginRequest';
-import { RoomDisplayDataResponse } from '../models/roomDisplayDataResponse';
-import { RoomPuzzle } from '../models/roomSettings';
+import { RoomLoginRequest } from '../../models/roomLoginRequest';
+import { RoomDisplayDataResponse } from '../../models/roomDisplayDataResponse';
+import { RoomPuzzle } from '../../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
-import Utils from '../shared/utils';
+import Utils from '../../shared/utils';
+import { $e } from '@angular/compiler/src/chars';
 
 @Component({
   selector: 'app-rooms',
@@ -28,7 +29,6 @@ import Utils from '../shared/utils';
 export class RoomsComponent implements OnInit, OnDestroy {
   public isLoaded: boolean = false;
   public isAuthorized: boolean = false;
-  public isSolveFinished: boolean = false;
 
   public room: Room = {
     solves: [],
@@ -50,8 +50,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
     scrambledPuzzleImage: Utils.threeByThreeSolvedImage,
     startTime: new Date(),
   };
-  public currentTime: number = 0;
-  public currentPenalty: Penalty = Penalty.NoPenalty;
 
   public availableRooms: RoomDisplayDataResponse[] = [];
   public reset: Subject<void> = new Subject<void>();
@@ -158,15 +156,14 @@ export class RoomsComponent implements OnInit, OnDestroy {
     });
   }
 
-  public sendResult(): void {
+  public onSendResult($event: SolveResult): void {
     if (this.currentSolve) {
       this.roomService.sendResult(
         this.room.id,
         this.currentSolve.solveNumber,
-        this.currentTime,
-        this.currentPenalty,
+        $event.time,
+        $event.penalty,
       );
-      this.isSolveFinished = false;
     } else {
       console.error('Current solve empty');
     }
@@ -217,22 +214,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
         }
       },
     });
-  }
-
-  public onPenalty($event: Penalty): void {
-    if ($event === Penalty.PlusTwo) {
-      this.currentTime += 2000;
-    } else if ($event === Penalty.NoPenalty && this.currentPenalty === Penalty.PlusTwo) {
-      this.currentTime -= 2000;
-    }
-
-    this.currentPenalty = $event;
-  }
-
-  public onTimerResult($event: number): void {
-    this.currentTime = $event;
-    this.isSolveFinished = true;
-    this.currentPenalty = Penalty.NoPenalty;
   }
 
   public tryGetLastSolveFromRoomSolves(): void {
@@ -339,9 +320,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
   }
 
   private appendNewSolve(solve: Solve): void {
-    this.isSolveFinished = false;
-    this.currentPenalty = Penalty.NoPenalty;
-    this.currentTime = 0;
     this.reset.next();
 
     this.currentSolve = solve;

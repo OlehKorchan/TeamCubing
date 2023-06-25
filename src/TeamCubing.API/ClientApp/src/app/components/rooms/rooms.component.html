@@ -15,21 +15,11 @@
             ></mat-progress-bar>
           </div>
           <app-timer
-            (timerStopped)="onTimerResult($event)"
             [puzzleImage]="currentSolve.scrambledPuzzleImage"
             [scramble]="currentSolve.scramble"
             [reset]="reset"
-            (penaltySet)="onPenalty($event)"
+            (sendResult)="onSendResult($event)"
           ></app-timer>
-          <button
-            *ngIf="isSolveFinished"
-            (click)="sendResult()"
-            class="col-sm-4 col-md-3 mt-3 mx-2"
-            color="primary"
-            mat-raised-button
-          >
-            Send result
-          </button>
         </div>
         <div class="col-md-4 col-sm-12 mt-3">
           <mat-card>
@@ -45,9 +35,16 @@
                       Ao{{ avg.ao }}: {{ avg.time }} /
                     </span>
                   </p>
-                  <button (click)="forceNewSolve()" color="accent" mat-raised-button>
-                    Force new solve
-                  </button>
+                  <div class="row justify-content-start">
+                    <button
+                      (click)="forceNewSolve()"
+                      color="accent"
+                      mat-raised-button
+                      class="col-6"
+                    >
+                      Force new solve
+                    </button>
+                  </div>
                   <div class="col-1">
                     <div class="row">#</div>
                     <div *ngFor="let solve of room.solves" class="row">{{ solve.solveNumber }}</div>

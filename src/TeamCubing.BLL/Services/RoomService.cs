@@ -259,7 +259,8 @@ public class RoomService : IRoomService
     private static bool IsSolveFinished(Solve solve, Room room)
     {
         return room.ConnectedUserNames.All(un => solve.Results.Any(r => r.UserName == un)) ||
-               solve.StartTime.AddSeconds(RoomSolveMaxDurationSeconds) <= DateTime.UtcNow;
+               (room.Settings.EnableSolveTimeLimit &&
+                solve.StartTime.AddSeconds(RoomSolveMaxDurationSeconds) <= DateTime.UtcNow);
     }
 
     private async Task<(bool, Room)> PerformRoomValidationAsync(RoomLoginRequest request)

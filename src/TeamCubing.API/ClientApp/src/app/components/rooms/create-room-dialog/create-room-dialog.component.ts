@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { RoomCreateRequest } from '../../models/roomCreateRequest';
-import { RoomService } from '../../services/room.service';
+import { RoomCreateRequest } from '../../../models/roomCreateRequest';
+import { RoomService } from '../../../services/room.service';
 import { MatDialogRef } from '@angular/material/dialog';
-import { ModelResponse } from '../../models/modelResponse';
-import { Room } from '../../models/room';
-import { RoomLoginRequest } from '../../models/roomLoginRequest';
-import { RoomPuzzle } from '../../models/roomSettings';
-import { SolveService } from '../../services/solve.service';
+import { ModelResponse } from '../../../models/modelResponse';
+import { Room } from '../../../models/room';
+import { RoomLoginRequest } from '../../../models/roomLoginRequest';
+import { RoomPuzzle } from '../../../models/roomSettings';
+import { SolveService } from '../../../services/solve.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 
 @Component({

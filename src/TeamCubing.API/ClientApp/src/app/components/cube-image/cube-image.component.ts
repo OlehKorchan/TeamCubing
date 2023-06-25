@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
-import { Color, PuzzleImage } from '../models/puzzles/puzzleImage';
-import { RoomPuzzle } from '../models/roomSettings';
+import { Color, PuzzleImage } from '../../models/puzzles/puzzleImage';
+import { RoomPuzzle } from '../../models/roomSettings';
 
 @Component({
   selector: 'app-cube-image',

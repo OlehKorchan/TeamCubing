@@ -1,11 +1,18 @@
-// noinspection SpellCheckingInspection
-
-import {Component, HostListener, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {Observable, Subject, Subscription, timer} from 'rxjs';
-import {MsToTimePipe} from '../pipes/ms-to-time.pipe';
-import {PuzzleImage} from '../models/puzzles/puzzleImage';
-import Utils from '../shared/utils';
-import {Penalty} from '../models/solve';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
+import { Observable, Subject, Subscription, timer } from 'rxjs';
+import { MsToTimePipe } from '../../pipes/ms-to-time.pipe';
+import { PuzzleImage } from '../../models/puzzles/puzzleImage';
+import Utils from '../../shared/utils';
+import { Penalty, SolveResult } from '../../models/solve';
 
 export enum BackgroundColors {
   Red = 'bg-red',
@@ -14,7 +21,7 @@ export enum BackgroundColors {
 
 export enum TimingMode {
   Timer,
-  Manual
+  Manual,
 }
 
 @Component({
@@ -24,6 +31,9 @@ export enum TimingMode {
   providers: [MsToTimePipe],
 })
 export class TimerComponent implements OnInit, OnDestroy {
+  @Output()
+  public sendResult: Subject<SolveResult> = new Subject<SolveResult>();
+
   @Output()
   public timerStopped: Subject<number> = new Subject<number>();
 
@@ -44,6 +54,7 @@ export class TimerComponent implements OnInit, OnDestroy {
   public backgroundColorClass: string = '';
 
   public timeInMilliseconds: number = 0;
+  public inputTime: number | undefined = undefined;
 
   public currentPenalty: Penalty = Penalty.NoPenalty;
 
@@ -56,10 +67,13 @@ export class TimerComponent implements OnInit, OnDestroy {
 
   public readonly timerStep: number = 10;
 
+  @ViewChild('manualInput')
+  public manualInput!: ElementRef;
+
   public ngOnInit(): void {
     this.resetSub = this.reset.subscribe({
       next: () => {
-        this.fullReset()
+        this.fullReset();
       },
     });
     timer(0, this.timerStep).subscribe(() => {
@@ -97,6 +111,12 @@ export class TimerComponent implements OnInit, OnDestroy {
     }
   }
 
+  public focusManualInput(): void {
+    if (this.currentTimingMode === TimingMode.Manual && this.manualInput) {
+      this.manualInput.nativeElement.focus();
+    }
+  }
+
   public dnfSolve(): void {
     this.currentPenalty = Penalty.DNF;
     this.penaltySet.next(this.currentPenalty);
@@ -105,6 +125,9 @@ export class TimerComponent implements OnInit, OnDestroy {
   public disablePenalty(): void {
     if (this.currentPenalty === Penalty.PlusTwo) {
       this.timeInMilliseconds -= 2000;
+      if (this.currentTimingMode === TimingMode.Manual && this.inputTime) {
+        this.inputTime -= 200;
+      }
     }
 
     this.currentPenalty = Penalty.NoPenalty;
@@ -114,6 +137,9 @@ export class TimerComponent implements OnInit, OnDestroy {
   public plusTwoSolve(): void {
     this.currentPenalty = Penalty.PlusTwo;
     this.timeInMilliseconds += 2000;
+    if (this.currentTimingMode === TimingMode.Manual && this.inputTime) {
+      this.inputTime += 200;
+    }
     this.penaltySet.next(this.currentPenalty);
   }
 
@@ -133,12 +159,32 @@ export class TimerComponent implements OnInit, OnDestroy {
     return this.currentTimingMode === TimingMode.Timer;
   }
 
-  public sendManualTime(): void {
-    // Manual time entered as microseconds
-    this.timerStopped.next(this.timeInMilliseconds * 10);
+  public updateTime(): void {
+    if (this.inputTime && this.inputTime > 0) {
+      const microseconds = this.inputTime % 100;
+      const seconds = parseInt(((this.inputTime % 10000) / 100).toString());
+      const minutes = parseInt(((this.inputTime % 1000000) / 10000).toString());
+      const hours = parseInt(((this.inputTime % 100000000) / 1000000).toString());
+      this.timeInMilliseconds =
+        microseconds * 10 + seconds * 1000 + minutes * 60000 + hours * 3600000;
+      this.timerStopped.next(this.timeInMilliseconds);
 
-    this.resetTimerState();
-    this.isTimerStopped = true;
+      this.isTimerStopped = true;
+    } else {
+      this.isTimerStopped = false;
+      this.timeInMilliseconds = 0;
+    }
+  }
+
+  public sendTime(): void {
+    if (this.timeInMilliseconds > 0 || this.currentPenalty === Penalty.DNF) {
+      this.sendResult.next({
+        time: this.timeInMilliseconds,
+        penalty: this.currentPenalty,
+        userName: '',
+      });
+      this.fullReset();
+    }
   }
 
   private startTimer(): void {
@@ -158,6 +204,7 @@ export class TimerComponent implements OnInit, OnDestroy {
   private fullReset(): void {
     this.resetTimerState();
     this.timeInMilliseconds = 0;
+    this.inputTime = undefined;
   }
 
   private resetTimerState(): void {
@@ -165,6 +212,9 @@ export class TimerComponent implements OnInit, OnDestroy {
     this.isRunning = false;
     this.isTimerStopped = false;
     this.backgroundColorClass = '';
+    if (this.currentTimingMode === TimingMode.Manual) {
+      this.manualInput.nativeElement.focus();
+    }
   }
 
   public ngOnDestroy() {

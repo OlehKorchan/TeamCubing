@@ -9,15 +9,17 @@ import { SharedModule } from './shared/shared.module';
 import { GlobalInterceptor } from './shared/interceptors/global.interceptor';
 import { LayoutModule } from './modules/layout/layout.module';
 import { MaterialModule } from './shared/material.module';
-import { TimerComponent } from './timer/timer.component';
+import { TimerComponent } from './components/timer/timer.component';
 import { MsToTimePipe } from './pipes/ms-to-time.pipe';
-import { DialogComponent } from './dialog/dialog.component';
-import { RoomsComponent } from './rooms/rooms.component';
+import { DialogComponent } from './components/dialog/dialog.component';
+import { RoomsComponent } from './components/rooms/rooms.component';
 import { RouterModule } from '@angular/router';
-import { CreateRoomDialogComponent } from './rooms/create-room-dialog/create-room-dialog.component';
+import { CreateRoomDialogComponent } from './components/rooms/create-room-dialog/create-room-dialog.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { JoinRoomDialogComponent } from './rooms/join-room-dialog/join-room-dialog.component';
-import { CubeImageComponent } from './cube-image/cube-image.component';
+import { JoinRoomDialogComponent } from './components/rooms/join-room-dialog/join-room-dialog.component';
+import { CubeImageComponent } from './components/cube-image/cube-image.component';
+import { InputTimePipe } from './pipes/input-time.pipe';
+import { InputTimeDirective } from './directives/input-time.directive';
 
 @NgModule({
   declarations: [
@@ -29,6 +31,8 @@ import { CubeImageComponent } from './cube-image/cube-image.component';
     CreateRoomDialogComponent,
     JoinRoomDialogComponent,
     CubeImageComponent,
+    InputTimePipe,
+    InputTimeDirective,
   ],
   imports: [
     SharedModule,
