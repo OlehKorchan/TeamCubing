@@ -15,6 +15,7 @@
             ></mat-progress-bar>
           </div>
           <app-timer
+            [puzzleType]="room.settings.puzzle"
             [puzzleImage]="currentSolve.scrambledPuzzleImage"
             [scramble]="currentSolve.scramble"
             [reset]="reset"

@@ -1,9 +1,11 @@
-﻿using System.Runtime.Serialization;
-
-namespace TeamCubing.Domain.Models;
+﻿namespace TeamCubing.Domain.Models;
 
 public enum RoomPuzzle
 {
-    [EnumMember(Value = "3x3")]
-    ThreeByThreeCube,
+    ThreeByThreeCube = 3,
+    TwoByTwoCube = 2,
+    FourByFourCube = 4,
+    FiveByFiveCube = 5,
+    SixBySixCube = 6,
+    SevenBySevenCube = 7,
 }

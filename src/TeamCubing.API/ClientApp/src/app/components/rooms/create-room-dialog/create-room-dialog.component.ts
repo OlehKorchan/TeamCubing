@@ -15,7 +15,14 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
   styleUrls: ['./create-room-dialog.component.css'],
 })
 export class CreateRoomDialogComponent implements OnInit {
-  public availablePuzzles: RoomPuzzle[] = [RoomPuzzle.ThreeByThreeCube];
+  public availablePuzzles: RoomPuzzle[] = [
+    RoomPuzzle.ThreeByThreeCube,
+    RoomPuzzle.TwoByTwoCube,
+    RoomPuzzle.FourByFourCube,
+    RoomPuzzle.FiveByFiveCube,
+    RoomPuzzle.SixBySixCube,
+    RoomPuzzle.SevenBySevenCube,
+  ];
 
   public roomForm!: FormGroup;
 

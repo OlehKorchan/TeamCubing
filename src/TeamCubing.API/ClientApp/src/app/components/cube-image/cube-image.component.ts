@@ -14,14 +14,11 @@ export class CubeImageComponent {
   @Input()
   public puzzleType: RoomPuzzle = RoomPuzzle.ThreeByThreeCube;
 
-  public faceWidth = 60;
+  public faceWidth = 65;
   public pieceWidth = 0.9;
 
   public get cubeSize(): number {
-    switch (this.puzzleType) {
-      case RoomPuzzle.ThreeByThreeCube:
-        return 3;
-    }
+    return this.puzzleType;
   }
 
   public getRGBColor(color: Color): string {
@@ -49,17 +46,17 @@ export class CubeImageComponent {
 
   public getFaceXByIndex(index: number): number {
     if (index === 0) {
-      return 6;
+      return this.cubeSize * 2;
     } else if (index === 1) {
-      return 3;
+      return this.cubeSize;
     } else if (index === 2) {
-      return 3;
+      return this.cubeSize;
     } else if (index === 3) {
       return 0;
     } else if (index === 4) {
-      return 3;
+      return this.cubeSize;
     } else if (index === 5) {
-      return 9;
+      return this.cubeSize * 3;
     }
 
     return 0;
@@ -67,17 +64,17 @@ export class CubeImageComponent {
 
   public getFaceYByIndex(index: number): number {
     if (index === 0) {
-      return 3;
+      return this.cubeSize;
     } else if (index === 1) {
       return 0;
     } else if (index === 2) {
-      return 3;
+      return this.cubeSize;
     } else if (index === 3) {
-      return 3;
+      return this.cubeSize;
     } else if (index === 4) {
-      return 6;
+      return this.cubeSize * 2;
     } else if (index === 5) {
-      return 3;
+      return this.cubeSize;
     }
 
     return 0;

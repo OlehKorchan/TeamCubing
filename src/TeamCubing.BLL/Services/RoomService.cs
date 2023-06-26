@@ -234,7 +234,7 @@ public class RoomService : IRoomService
     {
         var nextSolveNumber = room.Solves.Count + 1;
 
-        var (scramble, image) = _scramblerService.GenerateThreeByThreeScrambleWithImage();
+        var (scramble, image) = _scramblerService.GenerateScrambleWithImage(room.Settings.Puzzle);
 
         var solve = new Solve
         {

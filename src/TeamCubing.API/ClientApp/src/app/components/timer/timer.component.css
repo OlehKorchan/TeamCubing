@@ -21,9 +21,3 @@ input[type=number] {
 .bg-red {
   background-color: #f06292;
 }
-
-.timer-container {
-  display: flex;
-  justify-content: center;
-  height: 50vh;
-}

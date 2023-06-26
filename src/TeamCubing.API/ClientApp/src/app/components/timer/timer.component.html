@@ -17,51 +17,41 @@
   <div class="row w-100">
     <div class="col-auto w-100 p-0 m-0">
       <mat-card
-        *ngIf="isTimerMode(); else manual"
-        (mousedown)="onTimerReady($event)"
-        (mouseup)="onTimerFinished($event)"
         (touchend)="onTimerFinished($event)"
         (touchstart)="onTimerReady($event)"
         [class]="backgroundColorClass"
-        class="timer-container mb-3"
+        class="mb-3"
       >
         <mat-card-content>
-          <div class="mt-5">
+          <div class="row justify-content-center" *ngIf="isManualMode">
+            <div class="col-sm-12 col-md-6 col-lg-4">
+              <input
+                [style.font-size]="'2rem'"
+                class="form-control mt-md-5 mb-2"
+                [(ngModel)]="inputTime"
+                (input)="updateTime()"
+                type="number"
+                maxlength="8"
+                max="24595999"
+                min="1"
+              />
+            </div>
+          </div>
+          <div class="mt-md-5">
             <h1 [style.font-size]="'2rem'">
               {{ timeToString }}
             </h1>
           </div>
-          <div class="position-absolute bottom-0 end-0">
-            <app-cube-image [scrambledCube]="puzzleImage"></app-cube-image>
+          <div class="row justify-content-end">
+            <div class="col-auto">
+              <app-cube-image
+                [scrambledCube]="puzzleImage"
+                [puzzleType]="puzzleType"
+              ></app-cube-image>
+            </div>
           </div>
         </mat-card-content>
       </mat-card>
-      <ng-template #manual>
-        <mat-card class="timer-container mb-3">
-          <mat-card-content>
-            <input
-              #manualInput
-              [style.font-size]="'3rem'"
-              class="form-control mt-5 mb-2"
-              [(ngModel)]="inputTime"
-              (input)="updateTime()"
-              type="number"
-              maxlength="8"
-              max="24595999"
-              min="1"
-              (keyup.enter)="sendTime()"
-            />
-            <div>
-              <h1 [style.font-size]="'2rem'">
-                {{ timeToString }}
-              </h1>
-            </div>
-            <div class="position-absolute bottom-0 end-0">
-              <app-cube-image [scrambledCube]="puzzleImage"></app-cube-image>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      </ng-template>
     </div>
     <div *ngIf="isTimerStopped" class="row-cols-3 justify-content-center text-center">
       <button

@@ -26,10 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\TeamCubing.BLL\TeamCubing.BLL.csproj" />
-        <ProjectReference Include="..\..\src\TeamCubing.Domain\TeamCubing.Domain.csproj" />
-        <ProjectReference Include="..\TeamCubing.API\TeamCubing.API.csproj" />
-        <ProjectReference Include="..\TeamCubing.BLL\TeamCubing.BLL.csproj" />
+      <ProjectReference Include="..\..\src\TeamCubing.BLL\TeamCubing.BLL.csproj" />
+      <ProjectReference Include="..\..\src\TeamCubing.Domain\TeamCubing.Domain.csproj" />
     </ItemGroup>
-
 </Project>

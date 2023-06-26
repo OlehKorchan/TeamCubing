@@ -88,8 +88,18 @@ export class SolveService {
 
   public puzzleToString(puzzle: RoomPuzzle): string {
     switch (puzzle) {
+      case RoomPuzzle.TwoByTwoCube:
+        return '2x2x2';
+      case RoomPuzzle.FourByFourCube:
+        return '4x4x4';
+      case RoomPuzzle.FiveByFiveCube:
+        return '5x5x5';
+      case RoomPuzzle.SixBySixCube:
+        return '6x6x6';
+      case RoomPuzzle.SevenBySevenCube:
+        return '7x7x7';
       case RoomPuzzle.ThreeByThreeCube:
-        return '3x3';
+        return '3x3x3';
     }
   }
 

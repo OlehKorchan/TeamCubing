@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  Host,
   HostListener,
   Input,
   OnDestroy,
@@ -13,6 +14,7 @@ import { MsToTimePipe } from '../../pipes/ms-to-time.pipe';
 import { PuzzleImage } from '../../models/puzzles/puzzleImage';
 import Utils from '../../shared/utils';
 import { Penalty, SolveResult } from '../../models/solve';
+import { RoomPuzzle } from '../../models/roomSettings';
 
 export enum BackgroundColors {
   Red = 'bg-red',
@@ -45,6 +47,9 @@ export class TimerComponent implements OnInit, OnDestroy {
 
   @Input()
   public puzzleImage: PuzzleImage = Utils.threeByThreeSolvedImage;
+
+  @Input()
+  public puzzleType: RoomPuzzle = RoomPuzzle.ThreeByThreeCube;
 
   @Input()
   public reset: Observable<void> = new Observable<void>();
@@ -89,18 +94,28 @@ export class TimerComponent implements OnInit, OnDestroy {
     return toString.transform(this.timeInMilliseconds, this.isDnf());
   }
 
+  @HostListener('document:keyup.enter', ['$event'])
+  public onSendResult(event: Event): void {
+    this.sendTime();
+    event.preventDefault();
+  }
+
   @HostListener('document:keydown.space', ['$event'])
   public onTimerReady(event: Event): void {
-    if (!this.isRunning) {
-      this.backgroundColorClass = BackgroundColors.Green;
+    if (this.currentTimingMode === TimingMode.Timer) {
+      if (!this.isRunning) {
+        this.backgroundColorClass = BackgroundColors.Green;
+      }
+      event.preventDefault();
     }
-    event.preventDefault();
   }
 
   @HostListener('document:keyup.space', ['$event'])
   public onTimerFinished(event: Event): void {
-    this.toggleTimer();
-    event.preventDefault();
+    if (this.currentTimingMode === TimingMode.Timer) {
+      this.toggleTimer();
+      event.preventDefault();
+    }
   }
 
   public toggleTimer(): void {
@@ -155,8 +170,8 @@ export class TimerComponent implements OnInit, OnDestroy {
     return this.currentPenalty === Penalty.PlusTwo;
   }
 
-  public isTimerMode(): boolean {
-    return this.currentTimingMode === TimingMode.Timer;
+  public get isManualMode(): boolean {
+    return this.currentTimingMode === TimingMode.Manual;
   }
 
   public updateTime(): void {
@@ -220,4 +235,6 @@ export class TimerComponent implements OnInit, OnDestroy {
   public ngOnDestroy() {
     this.resetSub.unsubscribe();
   }
+
+  protected readonly undefined = undefined;
 }
