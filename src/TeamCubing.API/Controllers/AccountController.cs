@@ -1,15 +1,10 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using TeamCubing.API.Settings;
 using TeamCubing.BLL.Helpers;
 using TeamCubing.BLL.Interfaces;
-using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
-using TeamCubing.Domain.Settings;
 
 namespace TeamCubing.API.Controllers;
 
@@ -17,76 +12,26 @@ namespace TeamCubing.API.Controllers;
 [ApiController]
 public class AccountController : ControllerBase
 {
-    private readonly IJwtGenerator _jwtGenerator;
-    private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AccountController> _logger;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAuthService _authService;
 
     public AccountController(
-        UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
-        IJwtGenerator jwtGenerator,
         ILogger<AccountController> logger,
-        IOptions<Domain.Settings.Settings> jwtSettings
-    )
+        IAuthService authService)
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
-        _jwtGenerator = jwtGenerator;
         _logger = logger;
-        _jwtSettings = jwtSettings.Value.JwtSettings;
+        _authService = authService;
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync(
-        RegisterRequestModel registerModel)
+    public async Task<IActionResult> RegisterAsync(RegisterRequestModel registerModel)
     {
         var responseModel =
             new RegisterResponseModel();
 
         if (ModelState.IsValid)
         {
-            var user = new ApplicationUser
-            {
-                UserName = registerModel.UserName,
-                Email = registerModel.UserName,
-            };
-
-            var registerResult =
-                await _userManager.CreateAsync(
-                    user,
-                    registerModel.Password);
-
-            if (registerResult.Succeeded)
-            {
-                _logger.LogInformation(
-                    "User {Username} successfully registered",
-                    registerModel.UserName);
-
-                await _signInManager.SignInAsync(
-                    user,
-                    false);
-
-                responseModel.IsSuccess = true;
-                responseModel.Username = user.UserName;
-                responseModel.Token = _jwtGenerator.GenerateToken(
-                    await _userManager.FindByNameAsync(
-                        registerModel.UserName));
-
-                responseModel.ExpiresIn = _jwtSettings.ExpiresInHours;
-            }
-            else
-            {
-                _logger.LogError(
-                    "User {Username} registration failed",
-                    registerModel.UserName);
-
-                ModelErrorsHelper.MapToSingleError(registerResult.Errors, responseModel);
-                _logger.LogError(
-                    "Registration error: {Description}",
-                    responseModel.ErrorMessage);
-            }
+            responseModel = await _authService.RegisterAsync(registerModel);
         }
         else
         {
@@ -96,50 +41,20 @@ public class AccountController : ControllerBase
                 "Validation of the model failed:" +
                 "\n{Model}\nwith model errors:\n{Errors}",
                 JsonSerializer.Serialize(registerModel),
-                JsonSerializer.Serialize(responseModel.ErrorMessage)
-            );
+                JsonSerializer.Serialize(responseModel.ErrorMessage));
         }
 
         return Ok(responseModel);
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> LoginAsync(
-        LoginRequestModel loginModel)
+    public async Task<IActionResult> LoginAsync(LoginRequestModel loginModel)
     {
         var responseModel = new LoginResponseModel();
 
         if (ModelState.IsValid)
         {
-            var loginResult = await _signInManager
-                .PasswordSignInAsync(
-                    loginModel.Login,
-                    loginModel.Password,
-                    false,
-                    false);
-
-            if (loginResult.Succeeded)
-            {
-                responseModel.IsSuccess = true;
-                responseModel.Username = loginModel.Login;
-                responseModel.Token = _jwtGenerator.GenerateToken(
-                    await _userManager.FindByNameAsync(
-                        loginModel.Login));
-
-                responseModel.ExpiresIn = _jwtSettings.ExpiresInHours;
-                _logger.LogInformation(
-                    "Sign in for user {Username} successful",
-                    responseModel.Username);
-            }
-            else
-            {
-                responseModel.ErrorMessage = ErrorMessages.LoginError;
-                _logger.LogError(
-                    "User {Login} sign in failed with errors:" +
-                    "\n{Errors}",
-                    loginModel.Login,
-                    responseModel.ErrorMessage);
-            }
+            responseModel = await _authService.LoginAsync(loginModel);
         }
         else
         {
@@ -159,7 +74,7 @@ public class AccountController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Logout()
     {
-        await _signInManager.SignOutAsync();
+        await _authService.LogoutAsync();
         _logger.LogDebug("User has been logged out");
 
         return Ok();
