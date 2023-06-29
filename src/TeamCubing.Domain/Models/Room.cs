@@ -3,13 +3,13 @@ using Newtonsoft.Json;
 
 namespace TeamCubing.Domain.Models;
 
-public class Room
+public class Room : ICosmosModel
 {
     [JsonProperty("id")]
     public string Id { get; set; }
 
-    [JsonProperty("type")]
-    public RoomType Type { get; set; }
+    [JsonProperty(nameof(PartitionKey))]
+    public string PartitionKey { get; set; } = "Room";
 
     [JsonProperty("settings")]
     public RoomSettings Settings { get; set; }

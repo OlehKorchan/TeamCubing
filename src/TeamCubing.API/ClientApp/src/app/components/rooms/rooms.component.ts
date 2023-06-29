@@ -368,7 +368,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
     const toString = new MsToTimePipe();
     const mean = this.solveService.calculateMean(0, this.room.solves);
 
-    this.mean = toString.transform(mean);
+    if (mean as number) {
+      this.mean = toString.transform(mean);
+    }
 
     for (const n of [5, 12, 50, 100]) {
       const aoN = this.solveService.calculateAverage(n, this.room.solves);

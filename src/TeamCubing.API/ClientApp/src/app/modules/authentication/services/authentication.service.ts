@@ -31,21 +31,10 @@ export class AuthenticationService {
   }
 
   public logout() {
-    return this._httpClient
-      .post(this._config.getLogoutUrl(), null, {
-        observe: 'response',
-      })
-      .pipe(
-        tap((response) => {
-          if (response.status == 200) {
-            console.log('User has been logged out from server');
-            localStorage.removeItem(this._config.getExpiresAtSessionKey());
-            localStorage.removeItem(this._config.getUserTokenSessionKey());
-            localStorage.removeItem(this._config.getUserNameSessionKey());
-            console.log('User data has been deleted from client');
-          }
-        }),
-      );
+    localStorage.removeItem(this._config.getExpiresAtSessionKey());
+    localStorage.removeItem(this._config.getUserTokenSessionKey());
+    localStorage.removeItem(this._config.getUserNameSessionKey());
+    console.log('User data has been deleted from client');
   }
 
   public getUserName() {

@@ -14,7 +14,7 @@ public interface IRoomService
 
     Task<List<RoomDisplayDataResponse>> GetAllRoomsDataAsync();
 
-    Task<List<string>> LeaveAllRoomsAsync();
+    Task<string> LeaveLastRoomAsync();
 
     Task<RoomLoginResponse> LoginToRoomAsync(RoomLoginRequest loginDto);
 
