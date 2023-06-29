@@ -1,12 +1,12 @@
 <mat-card *ngIf="isLoaded">
   <mat-card-content>
     <div>
-      <div *ngIf="isAuthorized; else roomLogin" class="row justify-content-center">
-        <div class="col-sm-12 col-md-8 text-center">
-          <h2 class="text-center">
+      <div *ngIf="isAuthorized; else roomLogin" class="row">
+        <div class="col-sm-12 col-md-6 text-center justify-content-center">
+          <h3 class="text-center">
             Puzzle: {{ solveService.puzzleToString(room.settings.puzzle) }}
-          </h2>
-          <div *ngIf="room.settings.enableSolveTimeLimit">
+          </h3>
+          <div *ngIf="room.settings.enableSolveTimeLimit" class="mb-1">
             <mat-progress-bar
               [color]="getSolveProgressColor()"
               [value]="remainingPercents"
@@ -22,7 +22,7 @@
             (sendResult)="onSendResult($event)"
           ></app-timer>
         </div>
-        <div class="col-md-4 col-sm-12 mt-3">
+        <div class="col-md-6 col-sm-12 mt-3">
           <mat-card>
             <mat-card-content>
               <h3>

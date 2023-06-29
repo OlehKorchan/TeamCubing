@@ -19,7 +19,6 @@ import { RoomDisplayDataResponse } from '../../models/roomDisplayDataResponse';
 import { RoomPuzzle } from '../../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
 import Utils from '../../shared/utils';
-import { $e } from '@angular/compiler/src/chars';
 
 @Component({
   selector: 'app-rooms',
@@ -27,6 +26,8 @@ import { $e } from '@angular/compiler/src/chars';
   styleUrls: ['./rooms.component.css'],
 })
 export class RoomsComponent implements OnInit, OnDestroy {
+  private readonly EmptyScrambleMessage: string = 'Waiting for scramble...';
+
   public isLoaded: boolean = false;
   public isAuthorized: boolean = false;
 
@@ -46,7 +47,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public currentSolve: Solve = {
     results: [],
     solveNumber: 0,
-    scramble: 'SCRAMBLE GENERATING',
+    scramble: this.EmptyScrambleMessage,
     scrambledPuzzleImage: Utils.threeByThreeSolvedImage,
     startTime: new Date(),
   };
@@ -164,6 +165,8 @@ export class RoomsComponent implements OnInit, OnDestroy {
         $event.time,
         $event.penalty,
       );
+
+      this.currentSolve.scramble = this.EmptyScrambleMessage;
     } else {
       console.error('Current solve empty');
     }
@@ -365,7 +368,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
     const toString = new MsToTimePipe();
     const mean = this.solveService.calculateMean(0, this.room.solves);
 
-    this.mean = toString.transform(mean);
+    if (mean as number) {
+      this.mean = toString.transform(mean);
+    }
 
     for (const n of [5, 12, 50, 100]) {
       const aoN = this.solveService.calculateAverage(n, this.room.solves);

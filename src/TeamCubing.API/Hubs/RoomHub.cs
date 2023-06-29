@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Models;
+using TeamCubing.Domain.Extensions;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 
@@ -12,10 +14,10 @@ public class RoomHub : Hub
 {
     private readonly ILogger<RoomHub> _logger;
     private readonly IRoomService _roomService;
-    private readonly ApplicationUser _user;
+    private readonly ClaimsPrincipal _user;
 
     public RoomHub(
-        ApplicationUser user,
+        ClaimsPrincipal user,
         IRoomService roomService,
         ILogger<RoomHub> logger)
     {
@@ -50,11 +52,11 @@ public class RoomHub : Hub
     public async Task JoinGroup(string roomName)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
-        await Clients.Group(roomName).SendAsync("NewUser", _user.UserName);
+        await Clients.Group(roomName).SendAsync("NewUser", _user.UserName());
 
         _logger.LogInformation(
             "User {UserName} joined room {RoomName}",
-            _user.UserName,
+            _user.UserName(),
             roomName);
     }
 
@@ -62,7 +64,7 @@ public class RoomHub : Hub
     {
         try
         {
-            await _roomService.LeaveAllRoomsAsync();
+            await _roomService.LeaveLastRoomAsync();
         }
         catch (Exception e)
         {
@@ -73,7 +75,7 @@ public class RoomHub : Hub
         }
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
-        await Clients.Group(roomName).SendAsync("UserLeft", _user.UserName);
+        await Clients.Group(roomName).SendAsync("UserLeft", _user.UserName());
     }
 
     public async Task AskForNewSolve(string roomId)
@@ -92,12 +94,12 @@ public class RoomHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception exception)
     {
-        var rooms = await _roomService.LeaveAllRoomsAsync();
+        var room = await _roomService.LeaveLastRoomAsync();
 
-        var notificationTasks =
-            rooms.Select(room => Clients.Group(room).SendAsync("UserLeft", _user.UserName))
-                .ToList();
-        await Task.WhenAll(notificationTasks);
+        if (!string.IsNullOrEmpty(room))
+        {
+            await Clients.Group(room).SendAsync("UserLeft", _user.UserName());
+        }
 
         await base.OnDisconnectedAsync(exception);
     }

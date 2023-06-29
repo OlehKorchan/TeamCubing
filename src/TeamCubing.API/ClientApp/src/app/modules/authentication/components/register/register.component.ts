@@ -62,7 +62,7 @@ export class RegisterComponent implements OnDestroy {
   }
 
   public validateConfirmPassword(passwordField: NgModel, confirmPasswordField: NgModel) {
-    if (passwordField.value !== confirmPasswordField.value) {
+    if (confirmPasswordField.value !== passwordField.value) {
       confirmPasswordField.control.setErrors({ duplicate: true });
     }
   }

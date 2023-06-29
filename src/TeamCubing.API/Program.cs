@@ -1,12 +1,8 @@
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using AspNetCore.Identity.Stores;
-using AspNetCore.Identity.Stores.AzureCosmosDB.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
@@ -16,7 +12,6 @@ using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Services;
 using TeamCubing.DAL.Interfaces;
 using TeamCubing.DAL.Repositories;
-using TeamCubing.Domain.Models;
 using TeamCubing.Domain.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -114,35 +109,35 @@ void AddSwagger()
 
 void SetupIdentity()
 {
-    builder.Services.Configure<IdentityStoresOptions>(
-        options => options
-            .UseAzureCosmosDB(
-                configuration.CosmosSettings.Host,
-                configuration.CosmosSettings.Secret,
-                databaseId: configuration.CosmosSettings.Database));
+    // builder.Services.Configure<IdentityStoresOptions>(
+    //     options => options
+    //         .UseAzureCosmosDB(
+    //             configuration.CosmosSettings.Host,
+    //             configuration.CosmosSettings.Secret,
+    //             databaseId: configuration.CosmosSettings.Database));
 
-    builder.Services.AddDefaultIdentity<ApplicationUser>(
-            options =>
-            {
-                options.Password.RequireDigit = false;
-                options.Password.RequireLowercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequiredLength = 5;
-                options.Password.RequiredUniqueChars = 1;
-
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-                options.Lockout.MaxFailedAccessAttempts = 5;
-                options.Lockout.AllowedForNewUsers = true;
-
-                options.User.AllowedUserNameCharacters =
-                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-                options.User.RequireUniqueEmail = false;
-            }
-        )
-        .AddRoles<IdentityRole>()
-        .AddAzureCosmosDbStores()
-        .AddDefaultTokenProviders();
+    // builder.Services.AddDefaultIdentity<ApplicationUser>(
+    //         options =>
+    //         {
+    //             options.Password.RequireDigit = false;
+    //             options.Password.RequireLowercase = false;
+    //             options.Password.RequireNonAlphanumeric = false;
+    //             options.Password.RequireUppercase = false;
+    //             options.Password.RequiredLength = 5;
+    //             options.Password.RequiredUniqueChars = 1;
+    //
+    //             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    //             options.Lockout.MaxFailedAccessAttempts = 5;
+    //             options.Lockout.AllowedForNewUsers = true;
+    //
+    //             options.User.AllowedUserNameCharacters =
+    //                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+    //             options.User.RequireUniqueEmail = false;
+    //         }
+    //     )
+    //     .AddRoles<IdentityRole>()
+    //     .AddAzureCosmosDbStores()
+    //     .AddDefaultTokenProviders();
 }
 
 void AddAuthAndUserAccessor()
@@ -197,19 +192,15 @@ void AddAuthAndUserAccessor()
         {
             var httpContextAccessor = services.GetService<IHttpContextAccessor>();
 
-            var userClaims = httpContextAccessor?.HttpContext?.User;
-            var userName = userClaims.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            return new ApplicationUser
-            {
-                UserName = userName,
-            };
+            return httpContextAccessor?.HttpContext?.User;
         });
 }
 
 void ConfigureServices()
 {
     builder.Services.AddSingleton<IRoomRepository, RoomRepository>();
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddTransient<IJwtGenerator, JwtGenerator>();
     builder.Services.AddTransient<IRoomService, RoomService>();
     builder.Services.AddTransient<IScramblerService, ScramblerService>();

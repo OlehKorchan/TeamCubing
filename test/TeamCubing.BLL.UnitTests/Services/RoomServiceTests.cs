@@ -17,6 +17,7 @@ public class RoomServiceTests
 {
     private readonly Mock<ILogger<RoomService>> _loggerMock = new();
     private readonly Mock<IRoomRepository> _roomRepositoryMock = new();
+    private readonly Mock<IUserRepository> _userRepositoryMock = new();
     private readonly Mock<IScramblerService> _scramblerMock = new();
     private readonly RoomService _sut;
 
@@ -24,12 +25,10 @@ public class RoomServiceTests
     {
         _sut = new RoomService(
             _roomRepositoryMock.Object,
-            new ApplicationUser
-            {
-                UserName = TestFixture.CurrentUserName,
-            },
+            TestFixture.GetCurrentClaimsPrincipal(),
             _loggerMock.Object,
-            _scramblerMock.Object);
+            _scramblerMock.Object,
+            _userRepositoryMock.Object);
     }
 
     [Fact]
@@ -303,41 +302,60 @@ public class RoomServiceTests
     }
 
     [Fact]
-    public async Task LeaveAllRoomsAsync_UserInTheRoom_ShouldResetUserRoomAndReturnRoomName()
+    public async Task LeaveLastAsync_UserInTheRoom_ShouldRemoveUserFromRoomAndReturnRoomName()
     {
         // Arrange
         var roomWithUser = TestFixture.GetRoomWithUsers();
+        var currentUser = TestFixture.GetCurrentUser();
+        currentUser.LastRoomName = roomWithUser.Name;
 
+        _userRepositoryMock
+            .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
+            .ReturnsAsync(currentUser);
         _roomRepositoryMock
-            .Setup(m => m.ReadAllRoomsWithUser(TestFixture.CurrentUserName))
-            .ReturnsAsync(new List<Room> { roomWithUser });
+            .Setup(m => m.ReadByNameAsync(roomWithUser.Name))
+            .ReturnsAsync(roomWithUser);
 
         // Act
-        var previousRoomName = await _sut.LeaveAllRoomsAsync();
+        var previousRoomName = await _sut.LeaveLastRoomAsync();
 
         // Assert
         previousRoomName.Should().BeEquivalentTo(roomWithUser.Name);
+        _userRepositoryMock.Verify(
+            m => m.ReadByNameAsync(TestFixture.CurrentUserName),
+            Times.Once);
         _roomRepositoryMock.Verify(
-            m => m.ReadAllRoomsWithUser(TestFixture.CurrentUserName),
+            m => m.ReadByNameAsync(roomWithUser.Name),
+            Times.Once);
+        _roomRepositoryMock.Verify(
+            m => m.ReplaceAsync(
+                It.Is<Room>(r => r.ConnectedUserNames.All(u => u != TestFixture.CurrentUserName))),
             Times.Once);
     }
 
     [Fact]
-    public async Task LeaveCurrentRoomAsync_UserNotInTheRoom_ShouldReturnEmpty()
+    public async Task LeaveLastRoomAsync_UserNotInTheRoom_ShouldReturnEmpty()
     {
         // Arrange
-        var emptyRoom = TestFixture.GetEmptyRoom();
-
-        _roomRepositoryMock
-            .Setup(m => m.ReadAllRoomsWithUser(It.IsAny<string>()))
-            .ReturnsAsync(new List<Room>());
+        _userRepositoryMock
+            .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
+            .ReturnsAsync(TestFixture.GetCurrentUser());
 
         // Act
-        var previousRoomName = await _sut.LeaveAllRoomsAsync();
+        var previousRoomName = await _sut.LeaveLastRoomAsync();
 
         // Assert
-        previousRoomName.Should().BeEmpty();
-        _roomRepositoryMock.Verify(m => m.ReadAllRoomsWithUser(It.IsAny<string>()), Times.Once);
+        previousRoomName.Should().BeNullOrEmpty();
+        _userRepositoryMock.Verify(
+            m => m.ReadByNameAsync(TestFixture.CurrentUserName),
+            Times.Once);
+        _roomRepositoryMock.Verify(
+            m => m.ReadByNameAsync(It.IsAny<string>()),
+            Times.Never);
+        _roomRepositoryMock.Verify(
+            m => m.ReplaceAsync(
+                It.IsAny<Room>()),
+            Times.Never);
     }
 
     [Fact]
@@ -356,6 +374,9 @@ public class RoomServiceTests
             .Setup(
                 m => m.ReadByNameAsync(It.Is<string>(s => s == roomToLogin.Name)))
             .ReturnsAsync(roomToLogin);
+        _userRepositoryMock
+            .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
+            .ReturnsAsync(TestFixture.GetCurrentUser());
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -390,6 +411,9 @@ public class RoomServiceTests
             .Setup(
                 m => m.ReadByNameAsync(It.Is<string>(s => s == roomToLogin.Name)))
             .ReturnsAsync(roomToLogin);
+        _userRepositoryMock
+            .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
+            .ReturnsAsync(TestFixture.GetCurrentUser());
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -426,6 +450,9 @@ public class RoomServiceTests
             .Setup(
                 m => m.ReadByNameAsync(It.Is<string>(s => s == roomToLogin.Name)))
             .ReturnsAsync(roomToLogin);
+        _userRepositoryMock
+            .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
+            .ReturnsAsync(TestFixture.GetCurrentUser());
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
