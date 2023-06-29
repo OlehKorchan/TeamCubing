@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TeamCubing.BLL.Helpers;
 using TeamCubing.BLL.Interfaces;
@@ -68,15 +67,5 @@ public class AccountController : ControllerBase
         }
 
         return Ok(responseModel);
-    }
-
-    [HttpPost("logout")]
-    [Authorize]
-    public async Task<IActionResult> Logout()
-    {
-        await _authService.LogoutAsync();
-        _logger.LogDebug("User has been logged out");
-
-        return Ok();
     }
 }

@@ -1,12 +1,21 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Newtonsoft.Json;
 
 namespace TeamCubing.Domain.Models;
 
-public class ApplicationUser : IdentityUser
+public class ApplicationUser : ICosmosModel
 {
-    public string FirstName { get; set; }
+    [JsonProperty("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
 
-    public string SecondName { get; set; }
+    [JsonProperty("userName")]
+    public string UserName { get; set; }
 
+    [JsonProperty("passwordHash")]
+    public string PasswordHash { get; set; }
+
+    [JsonProperty("lastRoomName")]
     public string LastRoomName { get; set; }
+
+    [JsonProperty("partitionKey")]
+    public string PartitionKey { get; set; } = "User";
 }

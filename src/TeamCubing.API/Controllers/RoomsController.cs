@@ -29,7 +29,7 @@ public class RoomsController : ControllerBase
     [HttpGet("leaveCurrentRoom")]
     public async Task<IActionResult> LeaveRoomAsync()
     {
-        return Ok(await _roomService.LeaveAllRoomsAsync());
+        return Ok(await _roomService.LeaveLastRoomAsync());
     }
 
     [HttpGet("checkAccess/{roomName}")]

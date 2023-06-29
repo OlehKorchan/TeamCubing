@@ -1,4 +1,5 @@
-﻿using TeamCubing.Domain.DTO;
+﻿using System.Security.Claims;
+using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 
@@ -113,5 +114,28 @@ public static class TestFixture
             SolveNumber = 1,
             StartTime = DateTime.UtcNow,
         };
+    }
+
+    public static ApplicationUser GetCurrentUser()
+    {
+        return new ApplicationUser
+        {
+            Id = Guid.NewGuid().ToString(),
+            UserName = CurrentUserName,
+            PasswordHash = "HASH",
+        };
+    }
+
+    public static ClaimsPrincipal GetCurrentClaimsPrincipal()
+    {
+        return new ClaimsPrincipal(
+            new[]
+            {
+                new ClaimsIdentity(
+                    new[]
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, CurrentUserName),
+                    }),
+            });
     }
 }
