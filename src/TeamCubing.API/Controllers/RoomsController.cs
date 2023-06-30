@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using TeamCubing.API.Hubs;
 using TeamCubing.BLL.Interfaces;
@@ -8,6 +9,7 @@ using TeamCubing.Domain.RequestModels;
 namespace TeamCubing.API.Controllers;
 
 [Route("api/[controller]")]
+[Authorize]
 [ApiController]
 public class RoomsController : ControllerBase
 {
