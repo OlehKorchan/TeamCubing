@@ -13,6 +13,9 @@ public class ApplicationUser : ICosmosModel
     [JsonProperty("passwordHash")]
     public string PasswordHash { get; set; }
 
+    [JsonProperty("passwordSalt")]
+    public byte[] PasswordSalt { get; set; }
+
     [JsonProperty("lastRoomName")]
     public string LastRoomName { get; set; }
 
