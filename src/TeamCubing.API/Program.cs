@@ -36,13 +36,6 @@ builder.Services.AddCors(
                 .AllowCredentials()
                 .Build());
     });
-// if (builder.Environment.IsProduction())
-// {
-//     builder.Configuration.AddAzureKeyVault(
-//         new Uri("https://team-cubing.vault.azure.net/"),
-//         new DefaultAzureCredential()
-//     );
-// }
 
 builder.Services
     .AddControllers()
