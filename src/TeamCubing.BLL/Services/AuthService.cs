@@ -66,10 +66,12 @@ public class AuthService : IAuthService
             return response;
         }
 
+        var hashedPassword = HashPassword(request.Password, out var salt);
         var user = new ApplicationUser
         {
             UserName = request.UserName,
-            PasswordHash = HashPassword(request.Password),
+            PasswordHash = hashedPassword,
+            PasswordSalt = salt,
         };
 
         try
@@ -119,9 +121,9 @@ public class AuthService : IAuthService
         return true;
     }
 
-    private static string HashPassword(string password)
+    private static string HashPassword(string password, out byte[] salt)
     {
-        var salt = RandomNumberGenerator.GetBytes(128 / 8);
+        salt = RandomNumberGenerator.GetBytes(128 / 8);
 
         var hashed = Convert.ToBase64String(
             KeyDerivation.Pbkdf2(
@@ -145,7 +147,13 @@ public class AuthService : IAuthService
             return false;
         }
 
-        var hashedRequestPassword = HashPassword(request.Password);
+        var hashedRequestPassword= Convert.ToBase64String(
+            KeyDerivation.Pbkdf2(
+                password: request.Password!,
+                salt: user.PasswordSalt,
+                prf: KeyDerivationPrf.HMACSHA256,
+                iterationCount: 100000,
+                numBytesRequested: 256 / 8));
 
         if (hashedRequestPassword != user.PasswordHash)
         {
