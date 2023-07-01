@@ -1,7 +1,6 @@
 import {
   Component,
   ElementRef,
-  Host,
   HostListener,
   Input,
   OnDestroy,
@@ -71,6 +70,8 @@ export class TimerComponent implements OnInit, OnDestroy {
   public isTimerStopped: boolean = false;
 
   public readonly timerStep: number = 10;
+  public timeoutHandler: any;
+  public isReady: boolean = false;
 
   @ViewChild('manualInput')
   public manualInput!: ElementRef;
@@ -101,19 +102,34 @@ export class TimerComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:keydown.space', ['$event'])
-  public onTimerReady(event: Event): void {
+  public onTimerPress(event: Event): void {
     if (this.currentTimingMode === TimingMode.Timer) {
-      if (!this.isRunning) {
-        this.backgroundColorClass = BackgroundColors.Green;
+      if (this.isRunning) {
+        this.toggleTimer();
+      } else {
+        if (!this.isReady) {
+          this.timeoutHandler = setTimeout(() => {
+            this.isReady = true;
+            this.backgroundColorClass = BackgroundColors.Green;
+          }, 500);
+        }
       }
+
       event.preventDefault();
     }
   }
 
   @HostListener('document:keyup.space', ['$event'])
-  public onTimerFinished(event: Event): void {
-    if (this.currentTimingMode === TimingMode.Timer) {
-      this.toggleTimer();
+  public onTimerRelease(event: Event): void {
+    if (this.currentTimingMode === TimingMode.Timer && !this.isRunning) {
+      if (!this.isReady) {
+        clearTimeout(this.timeoutHandler);
+      } else {
+        this.isReady = false;
+        this.toggleTimer();
+      }
+      this.timeoutHandler = null;
+
       event.preventDefault();
     }
   }

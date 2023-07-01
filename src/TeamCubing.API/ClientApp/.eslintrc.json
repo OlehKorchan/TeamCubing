@@ -26,6 +26,7 @@
         "plugin:prettier/recommended"
       ],
       "rules": {
+        "linebreak-style": ["error", "windows"],
         "@angular-eslint/directive-selector": [
           "error",
           {
@@ -80,17 +81,6 @@
         "eqeqeq": [
           "warn",
           "smart"
-        ],
-        "no-magic-numbers": [
-          "warn",
-          {
-            "ignore": [
-              -1,
-              0,
-              1,
-              2
-            ]
-          }
         ],
         "@typescript-eslint/no-inferrable-types": "off",
         "@typescript-eslint/explicit-member-accessibility": [
