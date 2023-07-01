@@ -1,7 +1,6 @@
 import {
   Component,
   ElementRef,
-  Host,
   HostListener,
   Input,
   OnDestroy,

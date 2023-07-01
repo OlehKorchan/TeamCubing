@@ -4,8 +4,8 @@
       <h2>{{ scramble }}</h2>
     </div>
     <div class="col-auto mb-3 m-0 p-0">
-      <mat-button-toggle-group [(ngModel)]="currentTimingMode">
-        <mat-button-toggle [value]="timingMode.Timer" [disabled]="this.isRunning">
+      <mat-button-toggle-group [(ngModel)]="currentTimingMode" [disabled]="this.isRunning">
+        <mat-button-toggle [value]="timingMode.Timer">
           <mat-icon>timer</mat-icon>
         </mat-button-toggle>
         <mat-button-toggle [value]="timingMode.Manual" (click)="focusManualInput()">
