@@ -14,7 +14,7 @@
     <p>
       <mat-form-field appearance="outline">
         <mat-label>Room Name</mat-label>
-        <input formControlName="name" matInput placeholder="Name"/>
+        <input formControlName="name" matInput placeholder="Name" />
         <mat-error *ngIf="roomForm.get('name')?.invalid"> Room name required</mat-error>
       </mat-form-field>
     </p>
@@ -24,7 +24,7 @@
     <p *ngIf="!roomForm.get('isOpen')?.value">
       <mat-form-field appearance="outline">
         <mat-label>Room Password</mat-label>
-        <input formControlName="password" matInput placeholder="Password" type="password"/>
+        <input formControlName="password" matInput placeholder="Password" type="password" />
       </mat-form-field>
     </p>
     <p>
@@ -38,7 +38,7 @@
     <p>
       <mat-form-field>
         <mat-label>Users limit</mat-label>
-        <input formControlName="maxUsers" matInput type="number"/>
+        <input formControlName="maxUsers" matInput type="number" />
         <mat-error *ngIf="roomForm.get('maxUsers')?.invalid">
           User limit should be from 1 to 5
         </mat-error>
