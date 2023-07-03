@@ -10,8 +10,8 @@ import { RoomPuzzle } from '../models/roomSettings';
 export class SolveService {
   public constructor(private auth: AuthenticationService, private config: ConfigurationService) {}
 
-  public calculateAverage(averageOf: number, solves: Solve[]): number {
-    const avgResults = this.pullUserValidResults(averageOf, solves, this.auth.getUserName());
+  public calculateAverage(averageOf: number, solves: Solve[], user: string): number {
+    const avgResults = this.pullUserValidResults(averageOf, solves, user);
 
     const size = avgResults.length;
     if (size < averageOf) {
@@ -52,8 +52,8 @@ export class SolveService {
     return sum / (count - 2);
   }
 
-  public calculateMean(meanOf: number, solves: Solve[]): number {
-    const results = this.pullUserValidResults(meanOf, solves, this.auth.getUserName());
+  public calculateMean(meanOf: number, solves: Solve[], user: string): number {
+    const results = this.pullUserValidResults(meanOf, solves, user);
     const size = results.length;
     if (meanOf !== 0 && size < meanOf) {
       return 0;

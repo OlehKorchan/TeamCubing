@@ -26,30 +26,29 @@
           <mat-card>
             <mat-card-content>
               <div class="row align-items-end">
-                <p>
-                  Mean: {{ mean }} Best:
-                  {{ solveService.bestUserSolve(currentUserName, room.solves).time | msToTime }}
-                </p>
-                <p>
-                  <span *ngFor="let avg of notEmptyAverages">
-                    Ao{{ avg.ao }}: {{ avg.time }} /
-                  </span>
-                </p>
+                <!--                <p *ngFor="let avg of notEmptyAverages">Ao{{ avg.ao }}: {{ avg.time }}</p>-->
                 <div class="row justify-content-start">
                   <button (click)="forceNewSolve()" color="accent" mat-raised-button class="col-6">
                     Force new solve
                   </button>
                 </div>
-                <table class="table">
+                <table class="table w-auto">
                   <thead>
                     <tr>
                       <th scope="col">#</th>
-                      <th
-                        *ngFor="let user of room.connectedUserNames"
-                        scope="col"
-                        [style.color]="currentUserName === user ? '#FF4081' : 'black'"
-                      >
-                        {{ user }}
+                      <th *ngFor="let user of room.connectedUserNames" scope="col">
+                        <div>Mean: {{ mean[user]?.time }}</div>
+                        <div>
+                          Best:
+                          {{ solveService.bestUserSolve(user, room.solves).time | msToTime }}
+                        </div>
+                        <div *ngFor="let avg of averages[user]">Ao{{ avg.ao }}: {{ avg.time }}</div>
+                        <div
+                          [style.color]="currentUserName === user ? '#FF4081' : 'black'"
+                          class="text-center"
+                        >
+                          {{ user }}
+                        </div>
                       </th>
                     </tr>
                   </thead>
