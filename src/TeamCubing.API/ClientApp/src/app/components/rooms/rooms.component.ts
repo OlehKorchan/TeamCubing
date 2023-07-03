@@ -59,16 +59,12 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public subs$: Subscription[] = [];
 
   public timeToNextSolve: number = 0;
-  public mean: string = 'n/a';
+  public mean: { [user: string]: { time: string } } = {};
   protected readonly not = not;
   private interval!: any;
   private readonly emptyTime: string = '--:--';
-  private averages: { ao: number; isOn: boolean; time: string }[] = [
-    { ao: 5, isOn: false, time: 'n/a' },
-    { ao: 12, isOn: false, time: 'n/a' },
-    { ao: 50, isOn: false, time: 'n/a' },
-    { ao: 100, isOn: false, time: 'n/a' },
-  ];
+  public averages: { [user: string]: { ao: number; time: string }[] } = {};
+  public availableAverages: number[] = [5, 12, 50, 100];
 
   public constructor(
     private spinner: NgxSpinnerService,
@@ -84,9 +80,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
     this.timeToNextSolve = config.getTimeToNextSolve();
   }
 
-  public get notEmptyAverages(): { ao: number; isOn: boolean; time: string }[] {
-    return this.averages.flatMap((a) => (a.isOn ? a : []));
-  }
+  // public get notEmptyAverages(): { ao: number; isOn: boolean; time: string }[] {
+  //   return this.averages.flatMap((a) => (a.isOn ? a : []));
+  // }
 
   public get currentUserName(): string {
     return this.auth.getUserName();
@@ -368,36 +364,31 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
   private recalculateAverages(): void {
     const toString = new MsToTimePipe();
-    const mean = this.solveService.calculateMean(0, this.room.solves);
+    this.averages = {};
 
-    if (mean as number) {
-      this.mean = toString.transform(mean);
-    }
-
-    for (const n of [5, 12, 50, 100]) {
-      const aoN = this.solveService.calculateAverage(n, this.room.solves);
-      let avg = this.averages.find((a) => a.ao === n);
-      if (!avg) {
-        avg = {
-          ao: n,
-          isOn: false,
-          time: 'n/a',
-        };
-        this.averages.push(avg);
+    for (const user of this.room.connectedUserNames) {
+      const mean = this.solveService.calculateMean(0, this.room.solves, user);
+      if (mean as number) {
+        this.mean[user] = { time: toString.transform(mean) };
+      } else {
+        this.mean[user] = { time: 'n/a' };
       }
 
-      if (aoN === this.config.dnfValue) {
-        avg.isOn = true;
-        avg.time = toString.transform(aoN, true, true);
-      } else if (aoN > 0) {
-        avg.isOn = true;
+      for (const n of this.availableAverages) {
+        const aoN = this.solveService.calculateAverage(n, this.room.solves, user);
+        const newAvg: { ao: number; time: string } = { ao: n, time: 'n/a' };
 
-        avg.time = toString.transform(aoN);
-      } else {
-        avg.isOn = false;
-        avg.time = 'n/a';
+        if (aoN === this.config.dnfValue) {
+          newAvg.time = toString.transform(aoN, true, true);
+        } else if (aoN > 0) {
+          newAvg.time = toString.transform(aoN);
+        }
 
-        return;
+        if (!this.averages[user]) {
+          this.averages[user] = [];
+        }
+
+        this.averages[user].push(newAvg);
       }
     }
   }
