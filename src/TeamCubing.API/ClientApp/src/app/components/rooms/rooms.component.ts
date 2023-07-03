@@ -19,7 +19,6 @@ import { RoomDisplayDataResponse } from '../../models/roomDisplayDataResponse';
 import { RoomPuzzle } from '../../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
 import Utils from '../../shared/utils';
-import { UserSolveResult } from '../../models/userSolveResult';
 import { SolveInfoComponent } from '../solve-info/solve-info.component';
 
 @Component({
@@ -161,12 +160,12 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
   public onSendResult($event: SolveResult): void {
     if (this.currentSolve) {
-      this.roomService.sendResult(
-        this.room.id,
-        this.currentSolve.solveNumber,
-        $event.time,
-        $event.penalty,
-      );
+      this.roomService.sendResult({
+        roomId: this.room.id,
+        solveNumber: this.currentSolve.solveNumber,
+        timeInMilliseconds: $event.time,
+        penalty: $event.penalty,
+      });
 
       this.currentSolve.scramble = this.EmptyScrambleMessage;
       this.reset.next();
