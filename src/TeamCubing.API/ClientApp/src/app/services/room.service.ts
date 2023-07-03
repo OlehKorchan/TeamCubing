@@ -1,7 +1,7 @@
 import { EventEmitter, Injectable } from '@angular/core';
 import { ConfigurationService } from '../shared/services/configuration.service';
 import { Observable, Subject } from 'rxjs';
-import { Penalty, Solve, SolveResult } from '../models/solve';
+import { Solve, SolveResult } from '../models/solve';
 import { Room } from '../models/room';
 import { HttpClient } from '@angular/common/http';
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
@@ -10,6 +10,9 @@ import { ModelResponse } from '../models/modelResponse';
 import { RoomCreateRequest } from '../models/roomCreateRequest';
 import { RoomDisplayDataResponse } from '../models/roomDisplayDataResponse';
 import { RoomLoginRequest } from '../models/roomLoginRequest';
+import { NewUserResult } from '../models/newUserResult';
+import { MatDialog } from '@angular/material/dialog';
+import { ConnectionErrorDialogComponent } from '../components/connection-error-dialog/connection-error-dialog.component';
 
 @Injectable({
   providedIn: 'root',
@@ -35,6 +38,7 @@ export class RoomService {
     private config: ConfigurationService,
     private httpClient: HttpClient,
     private auth: AuthenticationService,
+    private dialog: MatDialog,
   ) {}
 
   public results(): Observable<SolveResult> {
@@ -59,9 +63,12 @@ export class RoomService {
         accessTokenFactory: () => this.auth.getToken(),
       })
       .build();
-    return this.hubConnection
-      .start()
-      .catch((err) => console.log('Error while starting connection: ' + err));
+    return this.hubConnection.start().catch((err) => {
+      console.log('Hub connection error: ' + err);
+      this.dialog.open(ConnectionErrorDialogComponent, {
+        width: '300px',
+      });
+    });
   }
 
   public subscribeOnAllRoomEvents(): void {
@@ -98,15 +105,8 @@ export class RoomService {
     });
   }
 
-  public sendResult(
-    roomId: string,
-    solveNumber: number,
-    timeMilliseconds: number,
-    penalty: Penalty,
-  ): void {
-    this.hubConnection
-      .invoke(this.resultsMethodName, roomId, solveNumber, timeMilliseconds, penalty)
-      .catch((err) => console.error(err));
+  public sendResult(request: NewUserResult): void {
+    this.hubConnection.invoke(this.resultsMethodName, request).catch((err) => console.error(err));
   }
 
   public joinRoom(roomName: string): void {

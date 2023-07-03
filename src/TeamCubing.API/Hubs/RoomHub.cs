@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.SignalR;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Models;
 using TeamCubing.Domain.Extensions;
-using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 
 namespace TeamCubing.API.Hubs;
@@ -26,26 +25,15 @@ public class RoomHub : Hub
         _logger = logger;
     }
 
-    public async Task NewResult(
-        string roomId,
-        int solveNumber,
-        int timeMilliseconds,
-        Penalty penalty)
+    public async Task NewResult(NewUserResultRequest request)
     {
-        var response = await _roomService.AddUserResultAsync(
-            new NewUserResultRequest
-            {
-                RoomId = roomId,
-                SolveNumber = solveNumber,
-                TimeInMilliseconds = timeMilliseconds,
-                Penalty = penalty,
-            });
+        var response = await _roomService.AddUserResultAsync(request);
 
         if (response.IsSuccess)
         {
             await Clients.Group(response.RoomName).SendAsync(nameof(NewResult), response.Model);
 
-            await AskForNewSolve(roomId);
+            await AskForNewSolve(request.RoomId);
         }
     }
 

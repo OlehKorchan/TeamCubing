@@ -20,6 +20,8 @@ import { JoinRoomDialogComponent } from './components/rooms/join-room-dialog/joi
 import { CubeImageComponent } from './components/cube-image/cube-image.component';
 import { InputTimePipe } from './pipes/input-time.pipe';
 import { InputTimeDirective } from './directives/input-time.directive';
+import { SolveInfoComponent } from './components/solve-info/solve-info.component';
+import { ConnectionErrorDialogComponent } from './components/connection-error-dialog/connection-error-dialog.component';
 
 @NgModule({
   declarations: [
@@ -33,6 +35,8 @@ import { InputTimeDirective } from './directives/input-time.directive';
     CubeImageComponent,
     InputTimePipe,
     InputTimeDirective,
+    SolveInfoComponent,
+    ConnectionErrorDialogComponent,
   ],
   imports: [
     SharedModule,

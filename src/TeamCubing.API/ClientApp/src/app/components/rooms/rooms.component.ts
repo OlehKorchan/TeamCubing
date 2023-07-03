@@ -19,6 +19,7 @@ import { RoomDisplayDataResponse } from '../../models/roomDisplayDataResponse';
 import { RoomPuzzle } from '../../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
 import Utils from '../../shared/utils';
+import { SolveInfoComponent } from '../solve-info/solve-info.component';
 
 @Component({
   selector: 'app-rooms',
@@ -159,36 +160,50 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
   public onSendResult($event: SolveResult): void {
     if (this.currentSolve) {
-      this.roomService.sendResult(
-        this.room.id,
-        this.currentSolve.solveNumber,
-        $event.time,
-        $event.penalty,
-      );
+      this.roomService.sendResult({
+        roomId: this.room.id,
+        solveNumber: this.currentSolve.solveNumber,
+        timeInMilliseconds: $event.time,
+        penalty: $event.penalty,
+      });
 
       this.currentSolve.scramble = this.EmptyScrambleMessage;
+      this.reset.next();
     } else {
       console.error('Current solve empty');
     }
   }
 
-  public getUserSolveColor(user: string, solve: Solve): 'red' | 'green' | 'black' {
-    const userResults = this.solveService.getNonDnfUserResultsSorted(
+  public getUserResult(solve: Solve, user: string): SolveResult | undefined {
+    return solve.results?.find((s: SolveResult) => s.userName === user);
+  }
+
+  public openSolveInfo(solve: Solve, time: string): void {
+    this.dialog.open(SolveInfoComponent, {
+      data: {
+        solve: solve,
+        time: time,
+      },
+      width: '300px',
+    });
+  }
+
+  public colorUserResult(user: string, solve: Solve): 'red' | 'green' | 'black' {
+    const allUserResults = this.solveService.getNonDnfUserResultsSorted(
       this.room.solves,
       user,
       'ascending',
     );
-    const bestResult = userResults[0];
-    const worstResult = userResults.at(-1);
-
-    const currentResult = solve.results?.find((s) => s.userName === user)?.time;
+    const bestResult = allUserResults.at(0);
+    const worstResult = allUserResults.at(-1);
+    const currentResult = this.getUserResult(solve, user);
 
     if (currentResult) {
-      if (bestResult?.time === currentResult) {
+      if (bestResult?.time === currentResult.time) {
         return 'green';
       }
 
-      if (worstResult?.time === currentResult) {
+      if (worstResult?.time === currentResult.time) {
         return 'red';
       }
     }
@@ -196,8 +211,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
     return 'black';
   }
 
-  public getUserSolveTime(userName: string, solve: Solve): string {
-    const result = solve.results?.find((s: SolveResult) => s.userName === userName);
+  public formatResult(result: SolveResult | undefined): string {
     if (result?.time) {
       const msToTimePipe = new MsToTimePipe();
       const isDnf = result.penalty === Penalty.DNF;
@@ -208,20 +222,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
     return this.emptyTime;
   }
 
-  public leaveRoom(): void {
-    this.roomService.logoutRoom().subscribe({
-      next: (response: boolean): void => {
-        if (response) {
-          this.roomService.leaveRoom(this.room.name);
-          this.router.navigate(['/rooms']);
-        }
-      },
-    });
-  }
-
-  public tryGetLastSolveFromRoomSolves(): void {
+  public loadAllResults(): void {
     if (this.room?.solves?.length) {
-      const currentSolve = this.room.solves[0];
+      const currentSolve = this.room.solves.at(0);
       if (currentSolve) {
         this.currentSolve = currentSolve;
         this.recalculateAverages();
@@ -275,7 +278,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
         this.room.solves = room.solves.sort((one, two) =>
           one.solveNumber > two.solveNumber ? -1 : 1,
         );
-        this.tryGetLastSolveFromRoomSolves();
+        this.loadAllResults();
 
         this.isAuthorized = true;
 
@@ -299,7 +302,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
           this.roomService.results().subscribe({
             next: (result: SolveResult): void => {
               this.appendNewUserResult(result);
-
               if (result.userName === this.currentUserName) {
                 this.recalculateAverages();
               }
