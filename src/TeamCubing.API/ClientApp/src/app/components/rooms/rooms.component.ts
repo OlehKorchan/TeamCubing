@@ -298,9 +298,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
           this.roomService.results().subscribe({
             next: (result: SolveResult): void => {
               this.appendNewUserResult(result);
-              if (result.userName === this.currentUserName) {
-                this.recalculateAverages();
-              }
+              this.recalculateAverages();
             },
           }),
           this.roomService.solveFinished().subscribe({
