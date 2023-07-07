@@ -26,7 +26,10 @@ export class MsToTimePipe implements PipeTransform {
     milliseconds = Math.round(milliseconds / 10);
 
     const minutesPart = minutes ? `${minutes}:` : '';
-    const millisecondsPart = milliseconds < 10 ? `0${milliseconds}` : milliseconds;
+    let millisecondsPart = milliseconds < 10 ? `0${milliseconds}` : milliseconds;
+    if (millisecondsPart === 100) {
+      millisecondsPart /= 10;
+    }
 
     return `${minutesPart}${seconds}.${millisecondsPart}`;
   }
