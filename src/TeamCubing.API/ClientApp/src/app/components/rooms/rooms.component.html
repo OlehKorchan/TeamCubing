@@ -17,7 +17,7 @@
           <app-timer
             [puzzleType]="room.settings.puzzle"
             [puzzleImage]="currentSolve.scrambledPuzzleImage"
-            [scramble]="currentSolve.scramble"
+            [scramble]="isResultSent ? EmptyScrambleMessage : currentSolve.scramble"
             [reset]="reset"
             (sendResult)="onSendResult($event)"
           ></app-timer>
@@ -26,7 +26,6 @@
           <mat-card>
             <mat-card-content>
               <div class="row align-items-end">
-                <!--                <p *ngFor="let avg of notEmptyAverages">Ao{{ avg.ao }}: {{ avg.time }}</p>-->
                 <div class="row justify-content-start">
                   <button (click)="forceNewSolve()" color="accent" mat-raised-button class="col-6">
                     Force new solve
