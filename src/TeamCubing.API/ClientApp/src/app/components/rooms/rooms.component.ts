@@ -27,10 +27,11 @@ import { SolveInfoComponent } from '../solve-info/solve-info.component';
   styleUrls: ['./rooms.component.css'],
 })
 export class RoomsComponent implements OnInit, OnDestroy {
-  private readonly EmptyScrambleMessage: string = 'Waiting for scramble...';
+  public readonly EmptyScrambleMessage: string = 'Waiting for scramble...';
 
   public isLoaded: boolean = false;
   public isAuthorized: boolean = false;
+  public isResultSent: boolean = false;
 
   public room: Room = {
     solves: [],
@@ -79,10 +80,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
   ) {
     this.timeToNextSolve = config.getTimeToNextSolve();
   }
-
-  // public get notEmptyAverages(): { ao: number; isOn: boolean; time: string }[] {
-  //   return this.averages.flatMap((a) => (a.isOn ? a : []));
-  // }
 
   public get currentUserName(): string {
     return this.auth.getUserName();
@@ -163,7 +160,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
         penalty: $event.penalty,
       });
 
-      this.currentSolve.scramble = this.EmptyScrambleMessage;
+      this.isResultSent = true;
       this.reset.next();
     } else {
       console.error('Current solve empty');
@@ -298,9 +295,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
           this.roomService.results().subscribe({
             next: (result: SolveResult): void => {
               this.appendNewUserResult(result);
-              if (result.userName === this.currentUserName) {
-                this.recalculateAverages();
-              }
+              this.recalculateAverages();
             },
           }),
           this.roomService.solveFinished().subscribe({
@@ -325,6 +320,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
     this.currentSolve = solve;
     this.room.solves.unshift(solve);
+    this.isResultSent = false;
   }
 
   private appendNewUserResult(result: SolveResult): void {

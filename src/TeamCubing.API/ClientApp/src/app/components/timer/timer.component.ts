@@ -8,7 +8,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
-import { Observable, Subject, Subscription, timer } from 'rxjs';
+import { delay, Observable, Subject, Subscription, takeUntil, timer } from 'rxjs';
 import { MsToTimePipe } from '../../pipes/ms-to-time.pipe';
 import { PuzzleImage } from '../../models/puzzles/puzzleImage';
 import Utils from '../../shared/utils';
@@ -53,6 +53,8 @@ export class TimerComponent implements OnInit, OnDestroy {
   @Input()
   public reset: Observable<void> = new Observable<void>();
 
+  public timerStopped$: Observable<number> = this.timerStopped.asObservable();
+
   public resetSub!: Subscription;
 
   public backgroundColorClass: string = '';
@@ -70,8 +72,12 @@ export class TimerComponent implements OnInit, OnDestroy {
   public isTimerStopped: boolean = false;
 
   public readonly timerStep: number = 10;
-  public timeoutHandler: any;
   public isReady: boolean = false;
+  public spaceDown: Subject<void> = new Subject<void>();
+  public spaceDown$: Observable<void> = this.spaceDown.asObservable();
+  public spaceUp: Subject<void> = new Subject<void>();
+  public spaceUp$: Observable<void> = this.spaceUp.asObservable();
+  public timeColor: 'red' | 'black' = 'black';
 
   @ViewChild('manualInput')
   public manualInput!: ElementRef;
@@ -81,11 +87,6 @@ export class TimerComponent implements OnInit, OnDestroy {
       next: () => {
         this.fullReset();
       },
-    });
-    timer(0, this.timerStep).subscribe(() => {
-      if (this.isRunning) {
-        this.timeInMilliseconds += this.timerStep;
-      }
     });
   }
 
@@ -103,16 +104,15 @@ export class TimerComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.space', ['$event'])
   public onTimerPress(event: Event): void {
+    this.spaceDown.next();
     if (this.currentTimingMode === TimingMode.Timer) {
       if (this.isRunning) {
         this.toggleTimer();
       } else {
-        if (!this.isReady) {
-          this.timeoutHandler = setTimeout(() => {
-            this.isReady = true;
-            this.backgroundColorClass = BackgroundColors.Green;
-          }, 500);
-        }
+        this.timeColor = 'red';
+        this.spaceDown$.pipe(delay(100), takeUntil(this.spaceUp$)).subscribe({
+          next: () => this.makeTimerReady(),
+        });
       }
 
       event.preventDefault();
@@ -121,14 +121,12 @@ export class TimerComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keyup.space', ['$event'])
   public onTimerRelease(event: Event): void {
+    this.timeColor = 'black';
+    this.spaceUp.next();
     if (this.currentTimingMode === TimingMode.Timer && !this.isRunning) {
-      if (!this.isReady) {
-        clearTimeout(this.timeoutHandler);
-      } else {
-        this.isReady = false;
-        this.toggleTimer();
+      if (this.isReady) {
+        this.startTimer();
       }
-      this.timeoutHandler = null;
 
       event.preventDefault();
     }
@@ -218,11 +216,23 @@ export class TimerComponent implements OnInit, OnDestroy {
     }
   }
 
+  private makeTimerReady(): void {
+    this.isReady = true;
+    this.backgroundColorClass = BackgroundColors.Green;
+  }
+
   private startTimer(): void {
+    this.isReady = false;
     this.timeInMilliseconds = 0;
     this.isRunning = true;
     this.isTimerStopped = false;
     this.backgroundColorClass = BackgroundColors.Red;
+
+    timer(0, this.timerStep)
+      .pipe(takeUntil(this.timerStopped$))
+      .subscribe(() => {
+        this.timeInMilliseconds += this.timerStep;
+      });
   }
 
   private stopTimer(): void {
@@ -251,6 +261,4 @@ export class TimerComponent implements OnInit, OnDestroy {
   public ngOnDestroy() {
     this.resetSub.unsubscribe();
   }
-
-  protected readonly undefined = undefined;
 }
