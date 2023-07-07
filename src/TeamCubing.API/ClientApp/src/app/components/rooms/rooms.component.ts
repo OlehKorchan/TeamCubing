@@ -81,10 +81,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
     this.timeToNextSolve = config.getTimeToNextSolve();
   }
 
-  // public get notEmptyAverages(): { ao: number; isOn: boolean; time: string }[] {
-  //   return this.averages.flatMap((a) => (a.isOn ? a : []));
-  // }
-
   public get currentUserName(): string {
     return this.auth.getUserName();
   }
