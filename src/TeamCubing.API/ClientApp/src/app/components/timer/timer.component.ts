@@ -104,15 +104,15 @@ export class TimerComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.space', ['$event'])
   public onTimerPress(event: Event): void {
-    this.spaceDown.next();
     if (this.currentTimingMode === TimingMode.Timer) {
       if (this.isRunning) {
         this.toggleTimer();
       } else {
         this.timeColor = 'red';
-        this.spaceDown$.pipe(delay(100), takeUntil(this.spaceUp$)).subscribe({
+        this.spaceDown$.pipe(delay(300), takeUntil(this.spaceUp$)).subscribe({
           next: () => this.makeTimerReady(),
         });
+        this.spaceDown.next();
       }
 
       event.preventDefault();
