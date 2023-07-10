@@ -10,6 +10,17 @@ import { RoomPuzzle } from '../models/roomSettings';
 export class SolveService {
   public constructor(private auth: AuthenticationService, private config: ConfigurationService) {}
 
+  public isBestResult(solve: Solve, result: SolveResult): boolean {
+    return (
+      result.time ===
+      Math.min(
+        ...solve.results.flatMap((r: SolveResult) => (
+          r.penalty !== Penalty.DNF ? r.time : []
+        )),
+      )
+    );
+  }
+
   public calculateAverage(averageOf: number, solves: Solve[], user: string): number {
     const avgResults = this.pullUserValidResults(averageOf, solves, user);
 
@@ -49,7 +60,10 @@ export class SolveService {
     sum -= minValue;
     sum -= maxValue;
 
-    return sum / (count - 2);
+    return sum /
+      (
+        count - 2
+      );
   }
 
   public calculateMean(meanOf: number, solves: Solve[], user: string): number {
@@ -88,6 +102,8 @@ export class SolveService {
 
   public puzzleToString(puzzle: RoomPuzzle): string {
     switch (puzzle) {
+      case RoomPuzzle.Megaminx:
+        return 'Megaminx';
       case RoomPuzzle.TwoByTwoCube:
         return '2x2x2';
       case RoomPuzzle.FourByFourCube:
@@ -124,7 +140,9 @@ export class SolveService {
   private pullUserValidResults(take: number, solves: Solve[], user: string): SolveResult[] {
     return solves
       .slice()
-      .sort((one, two) => (one.solveNumber < two.solveNumber ? -1 : 1))
+      .sort((one, two) => (
+        one.solveNumber < two.solveNumber ? -1 : 1
+      ))
       .flatMap((s) => s.results?.find((r) => r.userName === user) ?? [])
       .slice(-take);
   }

@@ -26,8 +26,7 @@ public class CubePuzzle : Puzzle
     };
 
     private static readonly int[] DefaultLengths =
-        { 0, 0, 25, 25, 40, 60, 80, 100, 120, 140, 160, 180 };
-
+        { 0, 0, 9, 25, 40, 60, 80, 100, 120, 140, 160, 180 };
 
     public CubePuzzle(int size)
     {
@@ -630,7 +629,7 @@ public class CubePuzzle : Puzzle
                         faceArr.Aggregate(
                             current2,
                             (current1, t) =>
-                                t.Aggregate(current1, (current, t1) => current + ((Face)t1))));
+                                t.Aggregate(current1, (current, t1) => current + (Face)t1)));
         }
 
         public override LinkedHashMap<string, PuzzleState> GetSuccessorsByName()
