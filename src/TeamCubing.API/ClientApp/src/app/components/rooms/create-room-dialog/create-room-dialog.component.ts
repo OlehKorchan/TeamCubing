@@ -17,6 +17,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 export class CreateRoomDialogComponent implements OnInit {
   public availablePuzzles: RoomPuzzle[] = [
     RoomPuzzle.ThreeByThreeCube,
+    RoomPuzzle.Megaminx,
     RoomPuzzle.TwoByTwoCube,
     RoomPuzzle.FourByFourCube,
     RoomPuzzle.FiveByFiveCube,

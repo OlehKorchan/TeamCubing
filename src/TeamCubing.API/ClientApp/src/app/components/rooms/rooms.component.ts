@@ -181,7 +181,17 @@ export class RoomsComponent implements OnInit, OnDestroy {
     });
   }
 
-  public colorUserResult(user: string, solve: Solve): 'red' | 'green' | 'black' {
+  public colorUserResult(user: string, solve: Solve): 'green' | 'black' {
+    const currentResult: SolveResult | undefined = this.getUserResult(solve, user);
+
+    if (currentResult && this.solveService.isBestResult(solve, currentResult)) {
+      return 'green';
+    }
+
+    return 'black';
+  }
+
+  public colorUserResultOld(user: string, solve: Solve): 'red' | 'green' | 'black' {
     const allUserResults = this.solveService.getNonDnfUserResultsSorted(
       this.room.solves,
       user,

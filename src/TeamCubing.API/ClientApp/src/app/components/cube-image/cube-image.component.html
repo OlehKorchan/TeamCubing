@@ -1,24 +1,26 @@
-<svg
-  [attr.viewBox]="'0 0 ' + cubeSize * 4 + ' ' + cubeSize * 3"
-  [style.height]="faceWidth * 3"
-  [style.width]="faceWidth * 4"
->
-  <ng-container *ngFor="let face of scrambledCube.faces; let faceIndex = index">
-    <ng-container *ngFor="let line of face.colors; let lineIndex = index">
-      <rect
-        *ngFor="let piece of line; let itemIndex = index"
-        [attr.height]="pieceWidth"
-        [attr.width]="pieceWidth"
-        [attr.x]="
-          pieceWidth + getFaceXByIndex(faceIndex) + itemIndex * pieceWidth + (1 - 2 * pieceWidth)
-        "
-        [attr.y]="
-          pieceWidth + getFaceYByIndex(faceIndex) + lineIndex * pieceWidth + (1 - 2 * pieceWidth)
-        "
-        [style.fill]="getRGBColor(piece)"
-        [style.stroke-width]="1 / 64"
-        [style.stroke]="'rgb(0, 0, 0)'"
-      />
+<div *ngIf="isImageablePuzzleType">
+  <svg
+    [attr.viewBox]="'0 0 ' + cubeSize * 4 + ' ' + cubeSize * 3"
+    [style.height]="faceWidth * 3"
+    [style.width]="faceWidth * 4"
+  >
+    <ng-container *ngFor="let face of scrambledCube.faces; let faceIndex = index">
+      <ng-container *ngFor="let line of face.colors; let lineIndex = index">
+        <rect
+          *ngFor="let piece of line; let itemIndex = index"
+          [attr.height]="pieceWidth"
+          [attr.width]="pieceWidth"
+          [attr.x]="
+            pieceWidth + getFaceXByIndex(faceIndex) + itemIndex * pieceWidth + (1 - 2 * pieceWidth)
+          "
+          [attr.y]="
+            pieceWidth + getFaceYByIndex(faceIndex) + lineIndex * pieceWidth + (1 - 2 * pieceWidth)
+          "
+          [style.fill]="getRGBColor(piece)"
+          [style.stroke-width]="1 / 64"
+          [style.stroke]="'rgb(0, 0, 0)'"
+        />
+      </ng-container>
     </ng-container>
-  </ng-container>
-</svg>
+  </svg>
+</div>

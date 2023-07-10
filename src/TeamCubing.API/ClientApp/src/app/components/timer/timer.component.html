@@ -1,104 +1,95 @@
-<div class="container text-center justify-content-center">
-  <div class="row justify-content-between w-100">
-    <div class="col-auto mb-3 m-0 p-0">
-      <h2>{{ scramble }}</h2>
+<mat-card
+  (touchend)="onTimerRelease($event)"
+  (touchstart)="onTimerPress($event)"
+  [class]="backgroundColorClass"
+  class="mb-3"
+>
+  <mat-card-content class="mx-1 px-1">
+    <div class="row justify-content-between">
+      <div class="col-auto mb-3 mx-1 px-1">
+        <h2>{{ scramble }}</h2>
+      </div>
+      <div class="col-auto mb-3 mx-1 px-1">
+        <mat-button-toggle-group [(ngModel)]="currentTimingMode" [disabled]="this.isRunning">
+          <mat-button-toggle [value]="timingMode.Timer">
+            <mat-icon>timer</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle (click)="focusManualInput()" [value]="timingMode.Manual">
+            <mat-icon>edit</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
     </div>
-    <div class="col-auto mb-3 m-0 p-0">
-      <mat-button-toggle-group [(ngModel)]="currentTimingMode" [disabled]="this.isRunning">
-        <mat-button-toggle [value]="timingMode.Timer">
-          <mat-icon>timer</mat-icon>
-        </mat-button-toggle>
-        <mat-button-toggle [value]="timingMode.Manual" (click)="focusManualInput()">
-          <mat-icon>edit</mat-icon>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
+    <div *ngIf="isManualMode" class="row justify-content-center">
+      <div class="col-sm-12 col-md-6 col-lg-4">
+        <input
+          #manualInput
+          (input)="updateTime()"
+          [(ngModel)]="inputTime"
+          [style.font-size]="'2rem'"
+          class="form-control mt-md-3 mb-2"
+          max="24595999"
+          maxlength="8"
+          min="1"
+          type="number"
+        />
+      </div>
     </div>
-  </div>
-  <div class="row w-100">
-    <div class="col-auto w-100 p-0 m-0">
-      <mat-card
-        (touchend)="onTimerRelease($event)"
-        (touchstart)="onTimerPress($event)"
-        [class]="backgroundColorClass"
-        class="mb-3"
-      >
-        <mat-card-content>
-          <div class="row justify-content-center" *ngIf="isManualMode">
-            <div class="col-sm-12 col-md-6 col-lg-4">
-              <input
-                #manualInput
-                [style.font-size]="'2rem'"
-                class="form-control mt-md-3 mb-2"
-                [(ngModel)]="inputTime"
-                (input)="updateTime()"
-                type="number"
-                maxlength="8"
-                max="24595999"
-                min="1"
-              />
-            </div>
-          </div>
-          <div class="mt-md-3">
-            <h1 [style.font-size]="'2rem'" [style.color]="timeColor">
-              {{ timeToString }}
-            </h1>
-          </div>
-          <div class="row justify-content-end">
-            <div class="col-auto">
-              <app-cube-image
-                [scrambledCube]="puzzleImage"
-                [puzzleType]="puzzleType"
-              ></app-cube-image>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
+    <div class="mt-md-3">
+      <h1 [style.color]="timeColor" [style.font-size]="'2rem'">
+        {{ timeToString }}
+      </h1>
     </div>
-    <div *ngIf="isTimerStopped" class="row-cols-3 justify-content-center text-center">
-      <button
-        (click)="sendTime()"
-        class="col-sm-4 col-md-3 mt-3 mx-2"
-        color="primary"
-        mat-raised-button
-      >
-        Send result
-      </button>
-      <button
-        (click)="plusTwoSolve()"
-        *ngIf="isNoPenalty()"
-        class="col-sm-4 col-md-3 mt-3 mx-2"
-        color="accent"
-        mat-raised-button
-      >
-        +2
-      </button>
-      <button
-        (click)="dnfSolve()"
-        *ngIf="isNoPenalty()"
-        class="col-sm-4 col-md-3 mt-3 mx-2"
-        color="warn"
-        mat-raised-button
-      >
-        DNF
-      </button>
-      <button
-        (click)="disablePenalty()"
-        *ngIf="isPlusTwo()"
-        class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
-        color="accent"
-        mat-raised-button
-      >
-        remove +2
-      </button>
-      <button
-        (click)="disablePenalty()"
-        *ngIf="isDnf()"
-        class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
-        color="warn"
-        mat-raised-button
-      >
-        remove DNF
-      </button>
+    <div class="row justify-content-end">
+      <div class="col-auto">
+        <app-cube-image [puzzleType]="puzzleType" [scrambledCube]="puzzleImage"></app-cube-image>
+      </div>
     </div>
-  </div>
+  </mat-card-content>
+</mat-card>
+<div *ngIf="isTimerStopped" class="row-cols-3 justify-content-center text-center">
+  <button
+    (click)="sendTime()"
+    class="col-sm-4 col-md-3 mt-3 mx-2"
+    color="primary"
+    mat-raised-button
+  >
+    Send result
+  </button>
+  <button
+    (click)="plusTwoSolve()"
+    *ngIf="isNoPenalty()"
+    class="col-sm-4 col-md-3 mt-3 mx-2"
+    color="accent"
+    mat-raised-button
+  >
+    +2
+  </button>
+  <button
+    (click)="dnfSolve()"
+    *ngIf="isNoPenalty()"
+    class="col-sm-4 col-md-3 mt-3 mx-2"
+    color="warn"
+    mat-raised-button
+  >
+    DNF
+  </button>
+  <button
+    (click)="disablePenalty()"
+    *ngIf="isPlusTwo()"
+    class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
+    color="accent"
+    mat-raised-button
+  >
+    remove +2
+  </button>
+  <button
+    (click)="disablePenalty()"
+    *ngIf="isDnf()"
+    class="col-sm-4 col-md-3 mt-3 mx-2 text-center"
+    color="warn"
+    mat-raised-button
+  >
+    remove DNF
+  </button>
 </div>
