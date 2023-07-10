@@ -1,11 +1,9 @@
-<mat-card *ngIf="isLoaded">
-  <mat-card-content>
-    <div>
-      <div *ngIf="isAuthorized; else roomLogin" class="row">
-        <div class="col-sm-12 col-md-6 text-center justify-content-center">
-          <h3 class="text-center">
-            Puzzle: {{ solveService.puzzleToString(room.settings.puzzle) }}
-          </h3>
+<div *ngIf="isLoaded">
+  <div>
+    <div *ngIf="isAuthorized; else roomLogin">
+      <h3 class="text-center">Puzzle: {{ solveService.puzzleToString(room.settings.puzzle) }}</h3>
+      <div class="row align-items-baseline">
+        <div class="col-sm-12 col-md-5 text-center justify-content-center px-1 mx-1">
           <div *ngIf="room.settings.enableSolveTimeLimit" class="mb-1">
             <mat-progress-bar
               [color]="getSolveProgressColor()"
@@ -15,19 +13,19 @@
             ></mat-progress-bar>
           </div>
           <app-timer
-            [puzzleType]="room.settings.puzzle"
-            [puzzleImage]="currentSolve.scrambledPuzzleImage"
-            [scramble]="isResultSent ? EmptyScrambleMessage : currentSolve.scramble"
-            [reset]="reset"
             (sendResult)="onSendResult($event)"
+            [puzzleImage]="currentSolve.scrambledPuzzleImage"
+            [puzzleType]="room.settings.puzzle"
+            [reset]="reset"
+            [scramble]="isResultSent ? EmptyScrambleMessage : currentSolve.scramble"
           ></app-timer>
         </div>
-        <div class="col-md-6 col-sm-12 mt-3">
+        <div class="col-sm-12 col-md-6 mt-3 px-1 mx-1">
           <mat-card>
-            <mat-card-content>
+            <mat-card-content class="mx-1 px-1">
               <div class="row align-items-end">
                 <div class="row justify-content-start">
-                  <button (click)="forceNewSolve()" color="accent" mat-raised-button class="col-6">
+                  <button (click)="forceNewSolve()" class="col-6" color="accent" mat-raised-button>
                     Force new solve
                   </button>
                 </div>
@@ -59,10 +57,10 @@
                         [style.color]="colorUserResult(user, solve)"
                       >
                         <button
-                          *ngIf="formatResult(getUserResult(solve, user)) as currentResult"
-                          mat-button
                           (click)="openSolveInfo(solve, currentResult)"
+                          *ngIf="formatResult(getUserResult(solve, user)) as currentResult"
                           class="w-auto"
+                          mat-button
                         >
                           {{ currentResult }}
                         </button>
@@ -75,26 +73,25 @@
           </mat-card>
         </div>
       </div>
-      <ng-template #roomLogin>
-        <button (click)="createNewRoom()" class="mx-2" color="accent" mat-raised-button>
-          Create new room
-        </button>
-        <button (click)="ngOnInit()" color="primary" mat-raised-button>Reload</button>
-        <p class="mt-2">Available rooms:</p>
-        <div class="row mt-3 justify-content-start text-center">
-          <div *ngFor="let room of availableRooms" class="col-sm-12 col-md-3 col-lg-2 my-2 mx-2">
-            <a [routerLink]="['/rooms', room.roomName]" class="full-width" mat-raised-button>
-              {{ room.isOpen ? "Open room" : "Private room" }}
-              <br />
-              Puzzle: {{ solveService.puzzleToString(room.puzzle) }}
-              <br />
-              Name: {{ room.roomName }}
-              <br />
-              Users: {{ room.connectedUsersCount }} / {{ room.maxUsersCount }}
-            </a>
-          </div>
-        </div>
-      </ng-template>
     </div>
-  </mat-card-content>
-</mat-card>
+    <ng-template #roomLogin>
+      <button (click)="createNewRoom()" class="mx-2" color="accent" mat-raised-button>
+        Create new room
+      </button>
+      <button (click)="ngOnInit()" color="primary" mat-raised-button>Reload</button>
+      <p class="mt-2">Available rooms:</p>
+      <div class="row mt-3 justify-content-start text-center">
+        <div *ngFor="let room of availableRooms" class="col-sm-12 col-md-3 col-lg-2 my-2 mx-2">
+          <a [routerLink]="['/rooms', room.roomName]" class="full-width" mat-raised-button>
+            <span [style.color]="'#3F51B5'">{{ room.roomName }}</span>
+            <mat-icon>{{ room.isOpen ? "lock_open" : "lock" }}</mat-icon>
+            <br />
+            Puzzle: {{ solveService.puzzleToString(room.puzzle) }}
+            <br />
+            Users: {{ room.connectedUsersCount }} / {{ room.maxUsersCount }}
+          </a>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+</div>

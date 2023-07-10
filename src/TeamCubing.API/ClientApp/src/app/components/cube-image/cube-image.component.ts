@@ -12,10 +12,21 @@ export class CubeImageComponent {
   public scrambledCube!: PuzzleImage;
 
   @Input()
-  public puzzleType: RoomPuzzle = RoomPuzzle.ThreeByThreeCube;
+  public puzzleType!: RoomPuzzle;
 
   public faceWidth = 65;
   public pieceWidth = 0.9;
+
+  public get isImageablePuzzleType(): boolean {
+    return (
+      this.puzzleType === RoomPuzzle.TwoByTwoCube ||
+      this.puzzleType === RoomPuzzle.ThreeByThreeCube ||
+      this.puzzleType === RoomPuzzle.FourByFourCube ||
+      this.puzzleType === RoomPuzzle.FiveByFiveCube ||
+      this.puzzleType === RoomPuzzle.SixBySixCube ||
+      this.puzzleType === RoomPuzzle.SevenBySevenCube
+    );
+  }
 
   public get cubeSize(): number {
     return this.puzzleType;

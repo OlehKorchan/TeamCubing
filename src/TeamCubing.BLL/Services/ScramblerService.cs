@@ -10,19 +10,36 @@ public class ScramblerService : IScramblerService
 {
     public (string Scramble, PuzzleImage Image) GenerateScrambleWithImage(RoomPuzzle puzzle)
     {
-        var cubeSize = (int)puzzle;
-        var cube = GetCubePuzzle(cubeSize);
+        Puzzle.PuzzleState puzzleState;
+        Puzzle puzzleObject;
+        string scramble = null;
+        PuzzleImage image = null;
+        if (IsCubePuzzle(puzzle))
+        {
+            var cubeSize = (int)puzzle;
+            puzzleObject = GetCubePuzzle(cubeSize);
 
-        var sourceOfRandomness = new Random();
+            (scramble, puzzleState) = ScramblePuzzle(puzzleObject);
 
-        var state = new CubePuzzle.CubeState(cube);
-
-        var scramble = cube.GenerateWcaScramble(sourceOfRandomness);
-
-        var newState = state.ApplyAlgorithm(scramble);
-        var image = MapToPuzzleImage((newState as CubePuzzle.CubeState)?.Image, cubeSize);
+            image = MapToPuzzleImage((puzzleState as CubePuzzle.CubeState)?.Image, cubeSize);
+        }
+        else if (puzzle is RoomPuzzle.Megaminx)
+        {
+            puzzleObject = new MegaminxPuzzle();
+            (scramble, _) = ScramblePuzzle(puzzleObject);
+        }
 
         return (scramble, image);
+    }
+
+    private static (string Scramble, Puzzle.PuzzleState State) ScramblePuzzle(Puzzle puzzleObject)
+    {
+        var sourceOfRandomness = new Random();
+        var scramble = puzzleObject?.GenerateWcaScramble(sourceOfRandomness);
+
+        var scrambledState = puzzleObject?.GetSolvedState()?.ApplyAlgorithm(scramble);
+
+        return (scramble, scrambledState);
     }
 
     private static PuzzleImage MapToPuzzleImage(IReadOnlyList<int[][]> image, int puzzleSize)
@@ -60,7 +77,17 @@ public class ScramblerService : IScramblerService
                 "Cube size should be between 2 and 7",
                 nameof(size)),
             3 => new ThreeByThreeCubePuzzle(),
-            _ => new CubePuzzle(size)
+            _ => new CubePuzzle(size),
         };
+    }
+
+    private static bool IsCubePuzzle(RoomPuzzle puzzle)
+    {
+        return puzzle is RoomPuzzle.TwoByTwoCube
+            or RoomPuzzle.ThreeByThreeCube
+            or RoomPuzzle.FourByFourCube
+            or RoomPuzzle.FiveByFiveCube
+            or RoomPuzzle.SixBySixCube
+            or RoomPuzzle.SevenBySevenCube;
     }
 }

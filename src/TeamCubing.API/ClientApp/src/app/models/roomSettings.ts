@@ -12,4 +12,5 @@ export enum RoomPuzzle {
   FiveByFiveCube = 5,
   SixBySixCube = 6,
   SevenBySevenCube = 7,
+  Megaminx = 12,
 }

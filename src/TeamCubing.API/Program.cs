@@ -56,8 +56,6 @@ var settings = builder.Configuration.GetSection(nameof(Settings));
 builder.Services.Configure<Settings>(settings);
 var configuration = settings.Get<Settings>();
 
-SetupIdentity();
-
 AddAuthAndUserAccessor();
 
 ConfigureMiddleware();
@@ -98,39 +96,6 @@ void AddSwagger()
                 });
         }
     );
-}
-
-void SetupIdentity()
-{
-    // builder.Services.Configure<IdentityStoresOptions>(
-    //     options => options
-    //         .UseAzureCosmosDB(
-    //             configuration.CosmosSettings.Host,
-    //             configuration.CosmosSettings.Secret,
-    //             databaseId: configuration.CosmosSettings.Database));
-
-    // builder.Services.AddDefaultIdentity<ApplicationUser>(
-    //         options =>
-    //         {
-    //             options.Password.RequireDigit = false;
-    //             options.Password.RequireLowercase = false;
-    //             options.Password.RequireNonAlphanumeric = false;
-    //             options.Password.RequireUppercase = false;
-    //             options.Password.RequiredLength = 5;
-    //             options.Password.RequiredUniqueChars = 1;
-    //
-    //             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    //             options.Lockout.MaxFailedAccessAttempts = 5;
-    //             options.Lockout.AllowedForNewUsers = true;
-    //
-    //             options.User.AllowedUserNameCharacters =
-    //                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-    //             options.User.RequireUniqueEmail = false;
-    //         }
-    //     )
-    //     .AddRoles<IdentityRole>()
-    //     .AddAzureCosmosDbStores()
-    //     .AddDefaultTokenProviders();
 }
 
 void AddAuthAndUserAccessor()
