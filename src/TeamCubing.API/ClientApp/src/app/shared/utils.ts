@@ -1,7 +1,7 @@
 ﻿import { Color, PuzzleImage } from '../models/puzzles/puzzleImage';
 
 export default class Utils {
-  public static get threeByThreeSolvedImage(): PuzzleImage {
+  public static getThreeByThreeImage(): PuzzleImage {
     return {
       faces: [
         {

@@ -14,9 +14,7 @@ export class SolveService {
     return (
       result.time ===
       Math.min(
-        ...solve.results.flatMap((r: SolveResult) => (
-          r.penalty !== Penalty.DNF ? r.time : []
-        )),
+        ...solve.results.flatMap((r: SolveResult) => (r.penalty !== Penalty.DNF ? r.time : [])),
       )
     );
   }
@@ -60,10 +58,7 @@ export class SolveService {
     sum -= minValue;
     sum -= maxValue;
 
-    return sum /
-      (
-        count - 2
-      );
+    return sum / (count - 2);
   }
 
   public calculateMean(meanOf: number, solves: Solve[], user: string): number {
@@ -140,9 +135,7 @@ export class SolveService {
   private pullUserValidResults(take: number, solves: Solve[], user: string): SolveResult[] {
     return solves
       .slice()
-      .sort((one, two) => (
-        one.solveNumber < two.solveNumber ? -1 : 1
-      ))
+      .sort((one, two) => (one.solveNumber < two.solveNumber ? -1 : 1))
       .flatMap((s) => s.results?.find((r) => r.userName === user) ?? [])
       .slice(-take);
   }

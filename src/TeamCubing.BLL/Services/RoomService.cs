@@ -88,7 +88,7 @@ public class RoomService : IRoomService
         var room = await _roomRepository.InsertAsync(
             new Room
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = request.RoomName,
                 Name = request.RoomName,
                 Password = request.RoomPassword,
                 Settings = request.Settings,
@@ -96,6 +96,7 @@ public class RoomService : IRoomService
                 {
                     _user.UserName(),
                 },
+                AdministratorName = _user.UserName(),
             });
 
         _logger.LogInformation("Room Created: {SerializedResult}", room.ToJsonString());
@@ -137,6 +138,45 @@ public class RoomService : IRoomService
         return result;
     }
 
+    public async Task<ModelResponse<Room>> ChangeRoomPuzzleAsync(ChangePuzzleRequest request)
+    {
+        var response = new ModelResponse<Room>();
+
+        var room = await _roomRepository.ReadByNameAsync(request.RoomName);
+
+        if (room is null)
+        {
+            response.ErrorMessage = "Room not exists";
+
+            return response;
+        }
+
+        room.Settings.Puzzle = request.Puzzle;
+        room.Solves = new List<Solve>();
+
+        await _roomRepository.ReplaceAsync(room);
+
+        response.Model = room;
+        response.IsSuccess = true;
+
+        return response;
+    }
+
+    public async Task<RoomOperationResponse<Room>> RemoveRoomAsync(string roomId)
+    {
+        var response = new RoomOperationResponse<Room>();
+
+        var removed = await _roomRepository.RemoveAsync(roomId);
+
+        if (removed)
+        {
+            response.IsSuccess = true;
+            response.RoomName = roomId;
+        }
+
+        return response;
+    }
+
     public async Task<List<RoomDisplayDataResponse>> GetAllRoomsDataAsync()
     {
         var allRooms = await _roomRepository.ReadAllAsync();
@@ -145,9 +185,11 @@ public class RoomService : IRoomService
             .Select(
                 r => new RoomDisplayDataResponse
                 {
+                    Id = r.Id,
                     IsOpen = r.Settings.IsOpen,
                     RoomName = r.Name,
                     Puzzle = r.Settings.Puzzle,
+                    AdministratorName = r.AdministratorName,
                     ConnectedUsersCount = r.ConnectedUserNames.Count,
                     MaxUsersCount = r.Settings.UsersLimit,
                 })
@@ -165,6 +207,14 @@ public class RoomService : IRoomService
             return result;
         }
 
+        var isAdminEmpty = string.IsNullOrEmpty(room.AdministratorName);
+        var isEmptyRoom = !room.ConnectedUserNames.Any();
+
+        if (isAdminEmpty || isEmptyRoom)
+        {
+            room.AdministratorName = _user.UserName();
+        }
+
         if (isUserNeverJoined)
         {
             room.WasOnceConnectedUserNames.Add(_user.UserName());
@@ -177,12 +227,10 @@ public class RoomService : IRoomService
             room.ConnectedUserNames.Add(_user.UserName());
         }
 
-        if (isUserNeverJoined || isUserNotInRoom)
-        {
-            await _roomRepository.ReplaceAsync(room);
-        }
+        var roomUpdate = _roomRepository.ReplaceAsync(room);
+        var userUpdate = UpdateUserLastRoomAsync(room.Name);
 
-        await UpdateLastUserRoomAsync(room.Name);
+        await Task.WhenAll(roomUpdate, userUpdate);
 
         result.IsSuccess = true;
         result.Model = room;
@@ -211,7 +259,20 @@ public class RoomService : IRoomService
 
                 roomSolve.Results.Add(newResult);
 
-                await _roomRepository.ReplaceAsync(room);
+                var roomUpdate = _roomRepository.ReplaceAsync(room);
+                var userUpdate = _userRepository.InsertSolveAsync(
+                    new UserSolve
+                    {
+                        RoomName = room.Name,
+                        Puzzle = room.Settings.Puzzle,
+                        Penalty = request.Penalty,
+                        Scramble = roomSolve.Scramble,
+                        Time = request.TimeInMilliseconds,
+                        DateAdded = DateTime.Now,
+                    },
+                    _user.UserName());
+
+                await Task.WhenAll(roomUpdate, userUpdate);
 
                 _logger.LogInformation(
                     "New user result added {Result}",
@@ -324,7 +385,7 @@ public class RoomService : IRoomService
         return room.ConnectedUserNames.Any(r => r == _user.UserName());
     }
 
-    private async Task UpdateLastUserRoomAsync(string roomName)
+    private async Task UpdateUserLastRoomAsync(string roomName)
     {
         var user = await _userRepository.ReadByNameAsync(_user.UserName());
 

@@ -3,6 +3,11 @@
   {{ dialogData.text }}
 </div>
 <div mat-dialog-actions>
-  <button [mat-dialog-close]="true" mat-button>YES</button>
-  <button [mat-dialog-close]="false" mat-button>NO</button>
+  <button *ngIf="dialogData.onlyOkButton; else doubleButtons" [mat-dialog-close]="true" mat-button>
+    OK
+  </button>
+  <ng-template #doubleButtons>
+    <button [mat-dialog-close]="true" mat-button>YES</button>
+    <button [mat-dialog-close]="false" mat-button>NO</button>
+  </ng-template>
 </div>

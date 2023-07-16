@@ -19,12 +19,15 @@ export class CubeImageComponent {
 
   public get isImageablePuzzleType(): boolean {
     return (
-      this.puzzleType === RoomPuzzle.TwoByTwoCube ||
-      this.puzzleType === RoomPuzzle.ThreeByThreeCube ||
-      this.puzzleType === RoomPuzzle.FourByFourCube ||
-      this.puzzleType === RoomPuzzle.FiveByFiveCube ||
-      this.puzzleType === RoomPuzzle.SixBySixCube ||
-      this.puzzleType === RoomPuzzle.SevenBySevenCube
+      this.scrambledCube &&
+      (
+        this.puzzleType === RoomPuzzle.TwoByTwoCube ||
+        this.puzzleType === RoomPuzzle.ThreeByThreeCube ||
+        this.puzzleType === RoomPuzzle.FourByFourCube ||
+        this.puzzleType === RoomPuzzle.FiveByFiveCube ||
+        this.puzzleType === RoomPuzzle.SixBySixCube ||
+        this.puzzleType === RoomPuzzle.SevenBySevenCube
+      )
     );
   }
 
