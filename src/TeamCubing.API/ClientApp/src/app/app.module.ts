@@ -22,6 +22,7 @@ import { InputTimePipe } from './pipes/input-time.pipe';
 import { InputTimeDirective } from './directives/input-time.directive';
 import { SolveInfoComponent } from './components/solve-info/solve-info.component';
 import { ConnectionErrorDialogComponent } from './components/connection-error-dialog/connection-error-dialog.component';
+import { ChangePuzzleVerificationDialogComponent } from './components/rooms/change-puzzle-verification-dialog/change-puzzle-verification-dialog.component';
 
 @NgModule({
   declarations: [
@@ -37,6 +38,7 @@ import { ConnectionErrorDialogComponent } from './components/connection-error-di
     InputTimeDirective,
     SolveInfoComponent,
     ConnectionErrorDialogComponent,
+    ChangePuzzleVerificationDialogComponent,
   ],
   imports: [
     SharedModule,

@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace TeamCubing.Domain.Models;
+﻿namespace TeamCubing.Domain.Models;
 
 public interface ICosmosModel
 {

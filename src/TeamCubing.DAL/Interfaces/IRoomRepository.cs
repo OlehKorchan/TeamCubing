@@ -11,4 +11,6 @@ public interface IRoomRepository : ICrudRepository<Room>
     Task ReplaceManyAsync(IEnumerable<Room> items);
 
     Task<List<Room>> ReadAllAsync();
+
+    Task<bool> RemoveAsync(string roomName);
 }

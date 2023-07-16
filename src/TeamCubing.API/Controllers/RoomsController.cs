@@ -55,6 +55,21 @@ public class RoomsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpDelete("{roomId}")]
+    public async Task<IActionResult> DeleteAsync(string roomId)
+    {
+        var result = await _roomService.RemoveRoomAsync(roomId);
+
+        if (result.IsSuccess)
+        {
+            await _roomHub.Clients.Group(result.RoomName).SendAsync("Removed");
+
+            return Ok(true);
+        }
+
+        return Ok(false);
+    }
+
     [HttpPost("login")]
     public async Task<IActionResult> LoginToRoomAsync(RoomLoginRequest request)
     {
