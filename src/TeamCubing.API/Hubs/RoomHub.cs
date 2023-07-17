@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Azure.Cosmos.Linq;
 using TeamCubing.BLL.Interfaces;
-using TeamCubing.BLL.Models;
 using TeamCubing.Domain.Extensions;
 using TeamCubing.Domain.RequestModels;
+using TeamCubing.Domain.ResponseModels;
 
 namespace TeamCubing.API.Hubs;
 

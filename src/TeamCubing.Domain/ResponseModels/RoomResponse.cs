@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
+using TeamCubing.Domain.Models;
 
-namespace TeamCubing.Domain.Models;
+namespace TeamCubing.Domain.ResponseModels;
 
-public class Room
+public class RoomResponse
 {
     [JsonProperty("id")]
     public string Id { get; set; }
@@ -22,12 +23,6 @@ public class Room
     [JsonProperty("connectedUserNames")]
     public List<string> ConnectedUserNames { get; set; } = new();
 
-    [JsonProperty("password")]
-    public string Password { get; set; }
-
     [JsonProperty("solves")]
-    public List<Solve> Solves { get; set; } = new();
-
-    [JsonProperty("cachedScrambles")]
-    public List<string> CachedScrambles { get; set; } = new();
+    public List<SolveResponse> Solves { get; set; } = new();
 }

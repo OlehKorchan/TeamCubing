@@ -2,10 +2,10 @@
 
 namespace TeamCubing.Domain.Models;
 
-public class ApplicationUser : ICosmosModel
+public class ApplicationUser
 {
     [JsonProperty("id")]
-    public string Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
 
     [JsonProperty("userName")]
     public string UserName { get; set; }
@@ -21,7 +21,4 @@ public class ApplicationUser : ICosmosModel
 
     [JsonProperty("solves")]
     public List<UserSolve> Solves { get; set; } = new();
-
-    [JsonProperty(nameof(PartitionKey))]
-    public string PartitionKey { get; set; } = nameof(ApplicationUser);
 }

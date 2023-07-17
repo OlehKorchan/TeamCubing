@@ -1,11 +1,10 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
-using TeamCubing.Domain.Models;
 using TeamCubing.Domain.Settings;
 
 namespace TeamCubing.DAL.Repositories;
 
-public abstract class CosmosBaseRepository<T> where T : ICosmosModel
+public abstract class CosmosBaseRepository<T>
 {
     private readonly ILogger<CosmosBaseRepository<T>> _logger;
     private readonly CosmosSettings _cosmosSettings;
@@ -27,7 +26,7 @@ public abstract class CosmosBaseRepository<T> where T : ICosmosModel
         var containerOptions = new ContainerProperties
         {
             Id = typeof(T).Name,
-            PartitionKeyPath = "/PartitionKey",
+            PartitionKeyPath = "/id",
         };
 
         var database = (await cosmosClient.CreateDatabaseIfNotExistsAsync(_cosmosSettings.Database))

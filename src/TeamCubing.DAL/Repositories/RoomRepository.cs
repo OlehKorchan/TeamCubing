@@ -77,11 +77,41 @@ public class RoomRepository : CosmosBaseRepository<Room>, IRoomRepository
         return ReadFromFeedAsync(query);
     }
 
+    public Task ReplaceScrambleCachePatch(string roomName, List<string> newScrambles)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Replace("/cachedScrambles", newScrambles),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
+    public Task InsertUserResultPatch(string roomName, int solveIndex, SolveResult newResult)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Add($"/solves/{solveIndex}/results/-", newResult),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
+    public Task InsertNewSolvePatch(string roomName, Solve solve)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Add("/solves/-", solve),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
     public async Task<bool> RemoveAsync(string roomName)
     {
         var deleteResult = await Container.DeleteItemAsync<Room>(
             roomName,
-            new PartitionKey(nameof(Room)));
+            new PartitionKey(roomName));
 
         return deleteResult.StatusCode == HttpStatusCode.NoContent;
     }

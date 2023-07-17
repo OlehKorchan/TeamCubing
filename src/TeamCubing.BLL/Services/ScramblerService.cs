@@ -8,38 +8,75 @@ namespace TeamCubing.BLL.Services;
 
 public class ScramblerService : IScramblerService
 {
-    public (string Scramble, PuzzleImage Image) GenerateScrambleWithImage(RoomPuzzle puzzle)
+    public string GenerateScramble(RoomPuzzle puzzle)
     {
+        if (IsCubePuzzle(puzzle))
+        {
+            var cubeSize = (int)puzzle;
+
+            return GenerateScramble(GetCubePuzzle(cubeSize));
+        }
+
+        if (puzzle is RoomPuzzle.Megaminx)
+        {
+            return GenerateScramble(new MegaminxPuzzle());
+        }
+
+        return null;
+    }
+
+    public ScrambleWithImage GenerateScrambleWithImage(RoomPuzzle puzzle)
+    {
+        var result = new ScrambleWithImage();
         Puzzle.PuzzleState puzzleState;
         Puzzle puzzleObject;
-        string scramble = null;
-        PuzzleImage image = null;
         if (IsCubePuzzle(puzzle))
         {
             var cubeSize = (int)puzzle;
             puzzleObject = GetCubePuzzle(cubeSize);
 
-            (scramble, puzzleState) = ScramblePuzzle(puzzleObject);
+            (result.Scramble, puzzleState) = ScramblePuzzle(puzzleObject);
 
-            image = MapToPuzzleImage((puzzleState as CubePuzzle.CubeState)?.Image, cubeSize);
+            result.Image = MapToPuzzleImage((puzzleState as CubePuzzle.CubeState)?.Image, cubeSize);
         }
         else if (puzzle is RoomPuzzle.Megaminx)
         {
             puzzleObject = new MegaminxPuzzle();
-            (scramble, _) = ScramblePuzzle(puzzleObject);
+            (result.Scramble, _) = ScramblePuzzle(puzzleObject);
         }
 
-        return (scramble, image);
+        return result;
+    }
+
+    public PuzzleImage GetImageFromScramble(string scramble, RoomPuzzle puzzleType)
+    {
+        if (IsCubePuzzle(puzzleType))
+        {
+            var imageArray =
+                (GetCubePuzzle((int)puzzleType).GetSolvedState().ApplyAlgorithm(scramble) as
+                    CubePuzzle.CubeState)?.Image;
+
+            return MapToPuzzleImage(imageArray, (int)puzzleType);
+        }
+
+        return null;
     }
 
     private static (string Scramble, Puzzle.PuzzleState State) ScramblePuzzle(Puzzle puzzleObject)
     {
-        var sourceOfRandomness = new Random();
-        var scramble = puzzleObject?.GenerateWcaScramble(sourceOfRandomness);
+        var scramble = GenerateScramble(puzzleObject);
 
         var scrambledState = puzzleObject?.GetSolvedState()?.ApplyAlgorithm(scramble);
 
         return (scramble, scrambledState);
+    }
+
+    private static string GenerateScramble(Puzzle puzzleObject)
+    {
+        var sourceOfRandomness = new Random();
+        var scramble = puzzleObject?.GenerateWcaScramble(sourceOfRandomness);
+
+        return scramble;
     }
 
     private static PuzzleImage MapToPuzzleImage(IReadOnlyList<int[][]> image, int puzzleSize)
