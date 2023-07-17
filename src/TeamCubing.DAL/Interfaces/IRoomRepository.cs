@@ -15,4 +15,6 @@ public interface IRoomRepository : ICrudRepository<Room>
     Task PatchScrambleCache(string roomName, List<ScrambleWithImage> newScrambles);
 
     Task PatchUserResults(string roomName, int solveIndex, SolveResult newResult);
+
+    Task<bool> RemoveAsync(string roomName);
 }

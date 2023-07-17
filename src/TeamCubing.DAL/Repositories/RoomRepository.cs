@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Cosmos;
+﻿using System.Net;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TeamCubing.DAL.Interfaces;
@@ -94,5 +95,14 @@ public class RoomRepository : CosmosBaseRepository<Room>, IRoomRepository
         };
 
         return Container.PatchItemAsync<Room>(roomName, new PartitionKey(nameof(Room)), operations);
+    }
+
+    public async Task<bool> RemoveAsync(string roomName)
+    {
+        var deleteResult = await Container.DeleteItemAsync<Room>(
+            roomName,
+            new PartitionKey(nameof(Room)));
+
+        return deleteResult.StatusCode == HttpStatusCode.NoContent;
     }
 }

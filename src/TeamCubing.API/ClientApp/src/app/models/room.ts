@@ -4,6 +4,7 @@ import { RoomSettings } from './roomSettings';
 export interface Room {
   id: string;
   name: string;
+  administratorName: string;
   wasOnceConnectedUserNames: string[];
   connectedUserNames: string[];
   settings: RoomSettings;

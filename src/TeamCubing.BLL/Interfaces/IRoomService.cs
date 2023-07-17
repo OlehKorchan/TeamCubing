@@ -22,4 +22,8 @@ public interface IRoomService
         AddUserResultAsync(NewUserResultRequest request);
 
     Task<SolvePushResponse> PushSolveToRoomAsync(string roomId, bool isForce);
+
+    Task<ModelResponse<Room>> ChangeRoomPuzzleAsync(ChangePuzzleRequest request);
+
+    Task<RoomOperationResponse<Room>> RemoveRoomAsync(string roomId);
 }

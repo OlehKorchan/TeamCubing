@@ -13,6 +13,9 @@ public class Room
     [JsonProperty("name")]
     public string Name { get; set; }
 
+    [JsonProperty("administratorName")]
+    public string AdministratorName { get; set; }
+
     [JsonProperty("wasOnceConnectedUserNames")]
     public List<string> WasOnceConnectedUserNames { get; set; } = new();
 

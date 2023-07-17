@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Azure.Cosmos.Linq;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Models;
 using TeamCubing.Domain.Extensions;
@@ -78,6 +79,17 @@ public class RoomHub : Hub
         var result = await _roomService.PushSolveToRoomAsync(roomId, true);
 
         await ProcessPushSolveResultAsync(result);
+    }
+
+    public async Task ChangePuzzle(ChangePuzzleRequest request)
+    {
+        var response = await _roomService.ChangeRoomPuzzleAsync(request);
+
+        if (response.IsSuccess)
+        {
+            await Clients.Group(request.RoomName).SendAsync(nameof(ChangePuzzle), request.Puzzle);
+            await AskForNewSolve(response.Model.Id);
+        }
     }
 
     public override async Task OnDisconnectedAsync(Exception exception)

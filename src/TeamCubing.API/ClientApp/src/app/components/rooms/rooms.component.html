@@ -1,7 +1,18 @@
 <div *ngIf="isLoaded">
   <div>
     <div *ngIf="isAuthorized; else roomLogin">
-      <h3 class="text-center">Puzzle: {{ solveService.puzzleToString(room.settings.puzzle) }}</h3>
+      <mat-form-field>
+        <mat-label>Puzzle</mat-label>
+        <mat-select
+          [(ngModel)]="newPuzzle"
+          (selectionChange)="changePuzzle()"
+          [disabled]="!isAdmin(room.administratorName)"
+        >
+          <mat-option *ngFor="let puzzle of availablePuzzles" [value]="puzzle">
+            {{ solveService.puzzleToString(puzzle) }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
       <div class="row align-items-baseline">
         <div class="col-sm-12 col-md-5 text-center justify-content-center px-1 mx-1">
           <div *ngIf="room.settings.enableSolveTimeLimit" class="mb-1">
@@ -24,48 +35,61 @@
           <mat-card>
             <mat-card-content class="mx-1 px-1">
               <div class="row align-items-end">
-                <div class="row justify-content-start">
-                  <button (click)="forceNewSolve()" class="col-6" color="accent" mat-raised-button>
+                <div class="row justify-content-start" *ngIf="isAdmin(room.administratorName)">
+                  <button
+                    (click)="forceNewSolve()"
+                    class="col-4 mx-2"
+                    color="accent"
+                    mat-raised-button
+                  >
                     Force new solve
+                  </button>
+                  <button
+                    (click)="removeRoom(room.name, room.id)"
+                    class="col-4 mx-2"
+                    color="warn"
+                    mat-raised-button
+                  >
+                    Delete room
                   </button>
                 </div>
                 <table class="table w-auto">
                   <thead>
-                    <tr>
-                      <th scope="col">#</th>
-                      <th *ngFor="let user of room.connectedUserNames" scope="col">
-                        <div>Mean: {{ mean[user]?.time }}</div>
-                        <div>
-                          Best:
-                          {{ solveService.bestUserSolve(user, room.solves).time | msToTime }}
-                        </div>
-                        <div *ngFor="let avg of averages[user]">Ao{{ avg.ao }}: {{ avg.time }}</div>
-                        <div
-                          [style.color]="currentUserName === user ? '#FF4081' : 'black'"
-                          class="text-center"
-                        >
-                          {{ user }}
-                        </div>
-                      </th>
-                    </tr>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th *ngFor="let user of room.connectedUserNames" scope="col">
+                      <div>Mean: {{ mean[user]?.time }}</div>
+                      <div>
+                        Best:
+                        {{ solveService.bestUserSolve(user, room.solves).time | msToTime }}
+                      </div>
+                      <div *ngFor="let avg of averages[user]">Ao{{ avg.ao }}: {{ avg.time }}</div>
+                      <div
+                        [style.color]="currentUserName === user ? '#FF4081' : 'black'"
+                        class="text-center"
+                      >
+                        {{ user }}
+                      </div>
+                    </th>
+                  </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let solve of room.solves">
-                      <th scope="row">{{ solve.solveNumber }}</th>
-                      <td
-                        *ngFor="let user of room.connectedUserNames"
-                        [style.color]="colorUserResult(user, solve)"
+                  <tr *ngFor="let solve of room.solves">
+                    <th scope="row">{{ solve.solveNumber }}</th>
+                    <td
+                      *ngFor="let user of room.connectedUserNames"
+                      [style.color]="colorUserResult(user, solve)"
+                    >
+                      <button
+                        (click)="openSolveInfo(solve, currentResult)"
+                        *ngIf="formatResult(getUserResult(solve, user)) as currentResult"
+                        class="w-auto"
+                        mat-button
                       >
-                        <button
-                          (click)="openSolveInfo(solve, currentResult)"
-                          *ngIf="formatResult(getUserResult(solve, user)) as currentResult"
-                          class="w-auto"
-                          mat-button
-                        >
-                          {{ currentResult }}
-                        </button>
-                      </td>
-                    </tr>
+                        {{ currentResult }}
+                      </button>
+                    </td>
+                  </tr>
                   </tbody>
                 </table>
               </div>
@@ -82,14 +106,19 @@
       <p class="mt-2">Available rooms:</p>
       <div class="row mt-3 justify-content-start text-center">
         <div *ngFor="let room of availableRooms" class="col-sm-12 col-md-3 col-lg-2 my-2 mx-2">
-          <a [routerLink]="['/rooms', room.roomName]" class="full-width" mat-raised-button>
-            <span [style.color]="'#3F51B5'">{{ room.roomName }}</span>
-            <mat-icon>{{ room.isOpen ? "lock_open" : "lock" }}</mat-icon>
-            <br />
-            Puzzle: {{ solveService.puzzleToString(room.puzzle) }}
-            <br />
-            Users: {{ room.connectedUsersCount }} / {{ room.maxUsersCount }}
-          </a>
+          <div>
+            <button mat-icon-button (click)="removeRoom(room.roomName, room.id)">
+              <mat-icon *ngIf="isAdmin(room.administratorName)" color="warn"> cancel</mat-icon>
+            </button>
+            <a [routerLink]="['/rooms', room.roomName]" class="full-width" mat-raised-button>
+              <span [style.color]="'#3F51B5'">{{ room.roomName }}</span>
+              <mat-icon>{{ room.isOpen ? "lock_open" : "lock" }}</mat-icon>
+              <br/>
+              Puzzle: {{ solveService.puzzleToString(room.puzzle) }}
+              <br/>
+              Users: {{ room.connectedUsersCount }} / {{ room.maxUsersCount }}
+            </a>
+          </div>
         </div>
       </div>
     </ng-template>

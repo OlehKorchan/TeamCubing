@@ -8,7 +8,9 @@ import { Location } from '@angular/common';
 import { ConfigurationService } from '../../shared/services/configuration.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ModelResponse } from '../../models/modelResponse';
-import { AuthenticationService } from '../../modules/authentication/services/authentication.service';
+import {
+  AuthenticationService
+} from '../../modules/authentication/services/authentication.service';
 import { MsToTimePipe } from '../../pipes/ms-to-time.pipe';
 import { SolveService } from '../../services/solve.service';
 import { not } from 'rxjs/internal/util/not';
@@ -18,8 +20,11 @@ import { RoomLoginRequest } from '../../models/roomLoginRequest';
 import { RoomDisplayDataResponse } from '../../models/roomDisplayDataResponse';
 import { RoomPuzzle } from '../../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
-import Utils from '../../shared/utils';
 import { SolveInfoComponent } from '../solve-info/solve-info.component';
+import {
+  ChangePuzzleVerificationDialogComponent
+} from './change-puzzle-verification-dialog/change-puzzle-verification-dialog.component';
+import { DialogComponent } from '../dialog/dialog.component';
 
 @Component({
   selector: 'app-rooms',
@@ -33,11 +38,22 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public isAuthorized: boolean = false;
   public isResultSent: boolean = false;
 
+  public availablePuzzles: RoomPuzzle[] = [
+    RoomPuzzle.ThreeByThreeCube,
+    RoomPuzzle.Megaminx,
+    RoomPuzzle.TwoByTwoCube,
+    RoomPuzzle.FourByFourCube,
+    RoomPuzzle.FiveByFiveCube,
+    RoomPuzzle.SixBySixCube,
+    RoomPuzzle.SevenBySevenCube,
+  ];
+
   public room: Room = {
     solves: [],
     connectedUserNames: [],
     name: '',
     id: '',
+    administratorName: '',
     wasOnceConnectedUserNames: [],
     settings: {
       puzzle: RoomPuzzle.ThreeByThreeCube,
@@ -50,7 +66,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
     results: [],
     solveNumber: 0,
     scramble: this.EmptyScrambleMessage,
-    scrambledPuzzleImage: Utils.threeByThreeSolvedImage,
+    scrambledPuzzleImage: { faces: [] },
     startTime: new Date(),
   };
 
@@ -66,6 +82,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   private readonly emptyTime: string = '--:--';
   public averages: { [user: string]: { ao: number; time: string }[] } = {};
   public availableAverages: number[] = [5, 12, 50, 100];
+  public newPuzzle: RoomPuzzle | undefined;
 
   public constructor(
     private spinner: NgxSpinnerService,
@@ -86,7 +103,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
   }
 
   public get remainingPercents(): number {
-    return (this.timeToNextSolve / this.config.getTimeToNextSolve()) * 100;
+    return (
+      this.timeToNextSolve / this.config.getTimeToNextSolve()
+    ) * 100;
   }
 
   public ngOnInit(): void {
@@ -151,6 +170,30 @@ export class RoomsComponent implements OnInit, OnDestroy {
     });
   }
 
+  public setPreviousPuzzle(): void {
+    this.newPuzzle = this.room.settings.puzzle;
+  }
+
+  public changePuzzle(): void {
+    this.dialog
+      .open(ChangePuzzleVerificationDialogComponent, {
+        width: '300px',
+      })
+      .afterClosed()
+      .subscribe({
+        next: (result: boolean) => {
+          if (result && this.newPuzzle) {
+            this.roomService.changePuzzle({
+              puzzle: this.newPuzzle,
+              roomName: this.room.name,
+            });
+          } else {
+            this.newPuzzle = this.room.settings.puzzle;
+          }
+        },
+      });
+  }
+
   public onSendResult($event: SolveResult): void {
     if (this.currentSolve) {
       this.roomService.sendResult({
@@ -189,6 +232,36 @@ export class RoomsComponent implements OnInit, OnDestroy {
     }
 
     return 'black';
+  }
+
+  public isAdmin(adminName: string): boolean {
+    const currentUser = this.auth.getUserName();
+    return adminName === currentUser;
+  }
+
+  public removeRoom(roomName: string, roomId: string): void {
+    this.dialog
+      .open(DialogComponent, {
+        width: '300px',
+        data: {
+          title: 'Remove room',
+          text: 'Are you sure to remove this room: ' + roomName + '?',
+        },
+      })
+      .afterClosed()
+      .subscribe({
+        next: (result: boolean) => {
+          if (result) {
+            this.roomService.removeRoom(roomId).subscribe({
+              next: (result: boolean) => {
+                if (result) {
+                  this.availableRooms = this.availableRooms.filter((r) => r.id !== roomId);
+                }
+              },
+            });
+          }
+        },
+      });
   }
 
   public colorUserResultOld(user: string, solve: Solve): 'red' | 'green' | 'black' {
@@ -278,6 +351,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
         this.isLoaded = true;
 
         this.room = room;
+        this.newPuzzle = room.settings.puzzle;
         this.room.solves = room.solves.sort((one, two) =>
           one.solveNumber > two.solveNumber ? -1 : 1,
         );
@@ -316,6 +390,33 @@ export class RoomsComponent implements OnInit, OnDestroy {
                 this.resetSolveTimer();
                 this.startSolveTimer();
               }
+            },
+          }),
+          this.roomService.puzzleChanged().subscribe({
+            next: (result: RoomPuzzle) => {
+              this.room.settings.puzzle = result;
+              this.newPuzzle = result;
+
+              this.room.solves = [];
+            },
+          }),
+          this.roomService.roomRemoved().subscribe({
+            next: () => {
+              this.dialog
+                .open(DialogComponent, {
+                  width: '300px',
+                  data: {
+                    title: 'Room deleted',
+                    text: 'Administrator deleted this room, do not worry, your results will be saved',
+                    onlyOkButton: true,
+                  },
+                })
+                .afterClosed()
+                .subscribe({
+                  next: () => {
+                    this.router.navigate(['/']);
+                  },
+                });
             },
           }),
         );

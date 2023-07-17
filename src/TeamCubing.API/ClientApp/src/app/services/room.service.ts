@@ -12,7 +12,11 @@ import { RoomDisplayDataResponse } from '../models/roomDisplayDataResponse';
 import { RoomLoginRequest } from '../models/roomLoginRequest';
 import { NewUserResult } from '../models/newUserResult';
 import { MatDialog } from '@angular/material/dialog';
-import { ConnectionErrorDialogComponent } from '../components/connection-error-dialog/connection-error-dialog.component';
+import {
+  ConnectionErrorDialogComponent
+} from '../components/connection-error-dialog/connection-error-dialog.component';
+import { ChangePuzzleRequest } from '../models/ChangePuzzleRequest';
+import { RoomPuzzle } from '../models/roomSettings';
 
 @Injectable({
   providedIn: 'root',
@@ -28,11 +32,15 @@ export class RoomService {
   private readonly forceNewSolveMethodName: string = 'ForceNewSolve';
   private readonly joinRoomMethodName: string = 'JoinGroup';
   private readonly leaveRoomMethodName: string = 'LeaveGroup';
+  private readonly changePuzzleMethodName: string = 'ChangePuzzle';
+  private readonly roomRemovedMethodName: string = 'Removed';
   private hubConnection!: HubConnection;
   private results$: Subject<SolveResult> = new Subject<SolveResult>();
   private users$: Subject<string> = new Subject<string>();
   private leftUsers$: Subject<string> = new Subject<string>();
   private solveFinished$: EventEmitter<Solve> = new EventEmitter<Solve>();
+  private puzzleChanged$: Subject<RoomPuzzle> = new Subject<RoomPuzzle>();
+  private roomRemoved$: Subject<void> = new Subject();
 
   public constructor(
     private config: ConfigurationService,
@@ -57,6 +65,14 @@ export class RoomService {
     return this.solveFinished$.asObservable();
   }
 
+  public puzzleChanged(): Observable<RoomPuzzle> {
+    return this.puzzleChanged$.asObservable();
+  }
+
+  public roomRemoved(): Observable<void> {
+    return this.roomRemoved$.asObservable();
+  }
+
   public startConnection(): Promise<void> {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(this.config.getApiUrl() + this.hubEndpoint, {
@@ -76,6 +92,8 @@ export class RoomService {
     this.addUsersResultsListener();
     this.addUserLeftListener();
     this.addSolveFinishedListener();
+    this.addChangePuzzleListener();
+    this.addRoomRemovedListener();
   }
 
   public addUserLeftListener(): void {
@@ -105,6 +123,18 @@ export class RoomService {
     });
   }
 
+  public addChangePuzzleListener(): void {
+    this.hubConnection.on(this.changePuzzleMethodName, (result: RoomPuzzle) => {
+      this.puzzleChanged$.next(result);
+    });
+  }
+
+  public addRoomRemovedListener(): void {
+    this.hubConnection.on(this.roomRemovedMethodName, () => {
+      this.roomRemoved$.next();
+    });
+  }
+
   public sendResult(request: NewUserResult): void {
     this.hubConnection.invoke(this.resultsMethodName, request).catch((err) => console.error(err));
   }
@@ -130,6 +160,12 @@ export class RoomService {
   public askForNewSolve(roomId: string): void {
     this.hubConnection
       .invoke(this.askForNewSolveMethodName, roomId)
+      .catch((err) => console.error(err));
+  }
+
+  public changePuzzle(request: ChangePuzzleRequest): void {
+    this.hubConnection
+      .invoke(this.changePuzzleMethodName, request)
       .catch((err) => console.error(err));
   }
 
@@ -162,6 +198,12 @@ export class RoomService {
   public logoutRoom(): Observable<boolean> {
     return this.httpClient.get<boolean>(
       this.config.getApiUrl() + this.roomsEndpoint + '/leaveCurrentRoom/',
+    );
+  }
+
+  public removeRoom(roomName: string): Observable<boolean> {
+    return this.httpClient.delete<boolean>(
+      this.config.getApiUrl() + this.roomsEndpoint + '/' + roomName,
     );
   }
 }
