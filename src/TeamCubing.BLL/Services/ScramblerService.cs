@@ -8,6 +8,23 @@ namespace TeamCubing.BLL.Services;
 
 public class ScramblerService : IScramblerService
 {
+    public string GenerateScramble(RoomPuzzle puzzle)
+    {
+        if (IsCubePuzzle(puzzle))
+        {
+            var cubeSize = (int)puzzle;
+
+            return GenerateScramble(GetCubePuzzle(cubeSize));
+        }
+
+        if (puzzle is RoomPuzzle.Megaminx)
+        {
+            return GenerateScramble(new MegaminxPuzzle());
+        }
+
+        return null;
+    }
+
     public ScrambleWithImage GenerateScrambleWithImage(RoomPuzzle puzzle)
     {
         var result = new ScrambleWithImage();
@@ -31,14 +48,35 @@ public class ScramblerService : IScramblerService
         return result;
     }
 
+    public PuzzleImage GetImageFromScramble(string scramble, RoomPuzzle puzzleType)
+    {
+        if (IsCubePuzzle(puzzleType))
+        {
+            var imageArray =
+                (GetCubePuzzle((int)puzzleType).GetSolvedState().ApplyAlgorithm(scramble) as
+                    CubePuzzle.CubeState)?.Image;
+
+            return MapToPuzzleImage(imageArray, (int)puzzleType);
+        }
+
+        return null;
+    }
+
     private static (string Scramble, Puzzle.PuzzleState State) ScramblePuzzle(Puzzle puzzleObject)
     {
-        var sourceOfRandomness = new Random();
-        var scramble = puzzleObject?.GenerateWcaScramble(sourceOfRandomness);
+        var scramble = GenerateScramble(puzzleObject);
 
         var scrambledState = puzzleObject?.GetSolvedState()?.ApplyAlgorithm(scramble);
 
         return (scramble, scrambledState);
+    }
+
+    private static string GenerateScramble(Puzzle puzzleObject)
+    {
+        var sourceOfRandomness = new Random();
+        var scramble = puzzleObject?.GenerateWcaScramble(sourceOfRandomness);
+
+        return scramble;
     }
 
     private static PuzzleImage MapToPuzzleImage(IReadOnlyList<int[][]> image, int puzzleSize)

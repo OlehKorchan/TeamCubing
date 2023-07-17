@@ -12,9 +12,11 @@ public interface IRoomRepository : ICrudRepository<Room>
 
     Task<List<Room>> ReadAllAsync();
 
-    Task PatchScrambleCache(string roomName, List<ScrambleWithImage> newScrambles);
+    Task ReplaceScrambleCachePatch(string roomName, List<string> newScrambles);
 
-    Task PatchUserResults(string roomName, int solveIndex, SolveResult newResult);
+    Task InsertUserResultPatch(string roomName, int solveIndex, SolveResult newResult);
+
+    Task InsertNewSolvePatch(string roomName, Solve solve);
 
     Task<bool> RemoveAsync(string roomName);
 }

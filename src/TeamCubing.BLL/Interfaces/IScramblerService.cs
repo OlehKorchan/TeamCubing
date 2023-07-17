@@ -5,5 +5,9 @@ namespace TeamCubing.BLL.Interfaces;
 
 public interface IScramblerService
 {
+    string GenerateScramble(RoomPuzzle puzzle);
+
     ScrambleWithImage GenerateScrambleWithImage(RoomPuzzle puzzle);
+
+    PuzzleImage GetImageFromScramble(string scramble, RoomPuzzle puzzleType);
 }

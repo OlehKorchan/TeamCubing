@@ -1,5 +1,4 @@
-﻿using TeamCubing.BLL.Models;
-using TeamCubing.Domain.DTO;
+﻿using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
