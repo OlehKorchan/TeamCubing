@@ -69,6 +69,7 @@ public class AuthService : IAuthService
         var hashedPassword = HashPassword(request.Password, out var salt);
         var user = new ApplicationUser
         {
+            Id = request.UserName,
             UserName = request.UserName,
             PasswordHash = hashedPassword,
             PasswordSalt = salt,
@@ -96,6 +97,11 @@ public class AuthService : IAuthService
         }
 
         return response;
+    }
+
+    public Task<List<ApplicationUser>> GetAllAsync()
+    {
+        return _userRepository.ReadAllAsync();
     }
 
     private async Task<bool> ValidateRegistrationAsync(
@@ -147,7 +153,7 @@ public class AuthService : IAuthService
             return false;
         }
 
-        var hashedRequestPassword= Convert.ToBase64String(
+        var hashedRequestPassword = Convert.ToBase64String(
             KeyDerivation.Pbkdf2(
                 password: request.Password!,
                 salt: user.PasswordSalt,

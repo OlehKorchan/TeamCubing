@@ -12,6 +12,7 @@ using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Services;
 using TeamCubing.DAL.Interfaces;
 using TeamCubing.DAL.Repositories;
+using TeamCubing.Domain.MappingProfiles;
 using TeamCubing.Domain.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,7 @@ builder.Services.AddSignalR();
 AddSwagger();
 
 ConfigureServices();
+builder.Services.AddAutoMapper(typeof(GeneralProfile));
 
 var settings = builder.Configuration.GetSection(nameof(Settings));
 builder.Services.Configure<Settings>(settings);

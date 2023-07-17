@@ -1,0 +1,9 @@
+<h2 mat-dialog-title>Are you sure you want to update current room puzzle?</h2>
+<mat-dialog-content>
+  <p>If you will change puzzle, it'll reset your room (all solves will be wiped).</p>
+  <p>But don't worry, your solves will be saved into your account.</p>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-button [mat-dialog-close]="true" cdkFocusInitial>Change Puzzle</button>
+</mat-dialog-actions>

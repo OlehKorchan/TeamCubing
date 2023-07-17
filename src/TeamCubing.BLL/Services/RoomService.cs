@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
+using AutoMapper;
 using Microsoft.Extensions.Logging;
 using TeamCubing.BLL.Helpers.Extensions;
 using TeamCubing.BLL.Interfaces;
-using TeamCubing.BLL.Models;
 using TeamCubing.DAL.Interfaces;
 using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.Extensions;
@@ -14,25 +14,30 @@ namespace TeamCubing.BLL.Services;
 
 public class RoomService : IRoomService
 {
+    private const int MinCachedScrambles = 5;
+    private const int MaxCachedScrambles = 10;
     private const int RoomSolveMaxDurationSeconds = 240;
     private readonly ILogger<RoomService> _logger;
     private readonly IRoomRepository _roomRepository;
     private readonly IScramblerService _scramblerService;
     private readonly ClaimsPrincipal _user;
     private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
 
     public RoomService(
         IRoomRepository roomRepository,
         ClaimsPrincipal user,
         ILogger<RoomService> logger,
         IScramblerService scramblerService,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IMapper mapper)
     {
         _roomRepository = roomRepository;
         _user = user;
         _logger = logger;
         _scramblerService = scramblerService;
         _userRepository = userRepository;
+        _mapper = mapper;
     }
 
     public async Task<RoomCheckAccessResult> CheckAccessAsync(string roomName)
@@ -88,7 +93,7 @@ public class RoomService : IRoomService
         var room = await _roomRepository.InsertAsync(
             new Room
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = request.RoomName,
                 Name = request.RoomName,
                 Password = request.RoomPassword,
                 Settings = request.Settings,
@@ -96,6 +101,7 @@ public class RoomService : IRoomService
                 {
                     _user.UserName(),
                 },
+                AdministratorName = _user.UserName(),
             });
 
         _logger.LogInformation("Room Created: {SerializedResult}", room.ToJsonString());
@@ -137,6 +143,45 @@ public class RoomService : IRoomService
         return result;
     }
 
+    public async Task<ModelResponse<Room>> ChangeRoomPuzzleAsync(ChangePuzzleRequest request)
+    {
+        var response = new ModelResponse<Room>();
+
+        var room = await _roomRepository.ReadByNameAsync(request.RoomName);
+
+        if (room is null)
+        {
+            response.ErrorMessage = "Room not exists";
+
+            return response;
+        }
+
+        room.Settings.Puzzle = request.Puzzle;
+        room.Solves = new List<Solve>();
+
+        await _roomRepository.ReplaceAsync(room);
+
+        response.Model = room;
+        response.IsSuccess = true;
+
+        return response;
+    }
+
+    public async Task<RoomOperationResponse<Room>> RemoveRoomAsync(string roomId)
+    {
+        var response = new RoomOperationResponse<Room>();
+
+        var removed = await _roomRepository.RemoveAsync(roomId);
+
+        if (removed)
+        {
+            response.IsSuccess = true;
+            response.RoomName = roomId;
+        }
+
+        return response;
+    }
+
     public async Task<List<RoomDisplayDataResponse>> GetAllRoomsDataAsync()
     {
         var allRooms = await _roomRepository.ReadAllAsync();
@@ -145,9 +190,11 @@ public class RoomService : IRoomService
             .Select(
                 r => new RoomDisplayDataResponse
                 {
+                    Id = r.Id,
                     IsOpen = r.Settings.IsOpen,
                     RoomName = r.Name,
                     Puzzle = r.Settings.Puzzle,
+                    AdministratorName = r.AdministratorName,
                     ConnectedUsersCount = r.ConnectedUserNames.Count,
                     MaxUsersCount = r.Settings.UsersLimit,
                 })
@@ -165,6 +212,14 @@ public class RoomService : IRoomService
             return result;
         }
 
+        var isAdminEmpty = string.IsNullOrEmpty(room.AdministratorName);
+        var isEmptyRoom = !room.ConnectedUserNames.Any();
+
+        if (isAdminEmpty || isEmptyRoom)
+        {
+            room.AdministratorName = _user.UserName();
+        }
+
         if (isUserNeverJoined)
         {
             room.WasOnceConnectedUserNames.Add(_user.UserName());
@@ -177,15 +232,14 @@ public class RoomService : IRoomService
             room.ConnectedUserNames.Add(_user.UserName());
         }
 
-        if (isUserNeverJoined || isUserNotInRoom)
-        {
-            await _roomRepository.ReplaceAsync(room);
-        }
+        var roomUpdate = _roomRepository.ReplaceAsync(room);
+        var userUpdate = UpdateUserLastRoomAsync(room.Name);
 
-        await UpdateLastUserRoomAsync(room.Name);
+        await Task.WhenAll(roomUpdate, userUpdate);
 
         result.IsSuccess = true;
-        result.Model = room;
+        result.Model = _mapper.Map<RoomResponse>(room);
+        AddScrambleImageToLastSolve(result.Model);
 
         return result;
     }
@@ -209,9 +263,23 @@ public class RoomService : IRoomService
                     Penalty = request.Penalty,
                 };
 
-                roomSolve.Results.Add(newResult);
+                var roomUpdate = _roomRepository.InsertUserResultPatch(
+                    room.Name,
+                    room.Solves.IndexOf(roomSolve),
+                    newResult);
+                var userUpdate = _userRepository.InsertSolveAsync(
+                    new UserSolve
+                    {
+                        RoomName = room.Name,
+                        Puzzle = room.Settings.Puzzle,
+                        Penalty = request.Penalty,
+                        Scramble = roomSolve.Scramble,
+                        Time = request.TimeInMilliseconds,
+                        DateAdded = DateTime.Now,
+                    },
+                    _user.UserName());
 
-                await _roomRepository.ReplaceAsync(room);
+                await Task.WhenAll(roomUpdate, userUpdate);
 
                 _logger.LogInformation(
                     "New user result added {Result}",
@@ -243,30 +311,30 @@ public class RoomService : IRoomService
         return lastRoomName;
     }
 
-    private async Task<Solve> CreateNextSolveInRoomAsync(Room room)
+    private async Task<SolveResponse> CreateNextSolveInRoomAsync(Room room)
     {
         var nextSolveNumber = room.Solves.Count + 1;
 
-        var (scramble, image) = _scramblerService.GenerateScrambleWithImage(room.Settings.Puzzle);
+        var scrambleWithImage = GetScrambleFromCacheOrGenerate(room);
 
         var solve = new Solve
         {
             SolveNumber = nextSolveNumber,
-            Scramble = scramble,
+            Scramble = scrambleWithImage.Scramble,
             StartTime = DateTime.UtcNow,
-            ScrambledPuzzleImage = image,
         };
 
-        room.Solves.Add(solve);
-
-        await _roomRepository.ReplaceAsync(room);
+        await _roomRepository.InsertNewSolvePatch(room.Name, solve);
 
         _logger.LogInformation(
             "Created solve: {Solve} in room: {RoomName}",
             solve.ToJsonString(),
             room.Name);
 
-        return solve;
+        var solveResponse = _mapper.Map<SolveResponse>(solve);
+        solveResponse.ScrambledPuzzleImage = scrambleWithImage.Image;
+
+        return solveResponse;
     }
 
     private static bool IsSolveFinished(Solve solve, Room room)
@@ -324,12 +392,79 @@ public class RoomService : IRoomService
         return room.ConnectedUserNames.Any(r => r == _user.UserName());
     }
 
-    private async Task UpdateLastUserRoomAsync(string roomName)
+    private async Task UpdateUserLastRoomAsync(string roomName)
     {
         var user = await _userRepository.ReadByNameAsync(_user.UserName());
 
         user.LastRoomName = roomName;
 
         await _userRepository.ReplaceAsync(user);
+    }
+
+    private ScrambleWithImage GetScrambleFromCacheOrGenerate(Room room)
+    {
+        var puzzleType = room.Settings.Puzzle;
+        if (puzzleType is RoomPuzzle.TwoByTwoCube or RoomPuzzle.ThreeByThreeCube)
+        {
+            return _scramblerService.GenerateScrambleWithImage(puzzleType);
+        }
+
+        var lastScramble = room.CachedScrambles.LastOrDefault();
+        ScrambleWithImage result;
+
+        if (lastScramble is null)
+        {
+            result = _scramblerService.GenerateScrambleWithImage(puzzleType);
+
+            Task.Run(() => UpdateCachedScrambles(room));
+        }
+        else
+        {
+            result = new ScrambleWithImage
+            {
+                Scramble = lastScramble,
+                Image = _scramblerService.GetImageFromScramble(lastScramble, puzzleType),
+            };
+
+            room.CachedScrambles.Remove(lastScramble);
+
+            if (room.CachedScrambles.Count < MinCachedScrambles)
+            {
+                Task.Run(() => UpdateCachedScrambles(room));
+            }
+            else
+            {
+                Task.Run(
+                    () => _roomRepository.ReplaceScrambleCachePatch(
+                        room.Name,
+                        room.CachedScrambles));
+            }
+        }
+
+        return result;
+    }
+
+    private async Task UpdateCachedScrambles(Room room)
+    {
+        var cachedScramblesInitialCount = room.CachedScrambles.Count;
+        for (var i = 0; i < MaxCachedScrambles - cachedScramblesInitialCount; i++)
+        {
+            room.CachedScrambles.Add(_scramblerService.GenerateScramble(room.Settings.Puzzle));
+        }
+
+        await _roomRepository.ReplaceScrambleCachePatch(room.Name, room.CachedScrambles);
+    }
+
+    private void AddScrambleImageToLastSolve(RoomResponse response)
+    {
+        var lastSolve = response.Solves.MaxBy(s => s.SolveNumber);
+
+        if (lastSolve is not null)
+        {
+            lastSolve.ScrambledPuzzleImage =
+                _scramblerService.GetImageFromScramble(
+                    lastSolve.Scramble,
+                    response.Settings.Puzzle);
+        }
     }
 }

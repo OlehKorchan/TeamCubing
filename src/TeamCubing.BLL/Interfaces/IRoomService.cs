@@ -1,5 +1,4 @@
-﻿using TeamCubing.BLL.Models;
-using TeamCubing.Domain.DTO;
+﻿using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
@@ -22,4 +21,8 @@ public interface IRoomService
         AddUserResultAsync(NewUserResultRequest request);
 
     Task<SolvePushResponse> PushSolveToRoomAsync(string roomId, bool isForce);
+
+    Task<ModelResponse<Room>> ChangeRoomPuzzleAsync(ChangePuzzleRequest request);
+
+    Task<RoomOperationResponse<Room>> RemoveRoomAsync(string roomId);
 }

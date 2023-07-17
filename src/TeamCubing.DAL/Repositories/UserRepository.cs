@@ -32,7 +32,9 @@ public class UserRepository : CosmosBaseRepository<ApplicationUser>, IUserReposi
 
     public async Task<ApplicationUser> ReadByIdAsync(string id)
     {
-        return (await Container.ReadItemAsync<ApplicationUser>(id, new PartitionKey("User")))
+        return (await Container.ReadItemAsync<ApplicationUser>(
+                id,
+                new PartitionKey(nameof(ApplicationUser))))
             ?.Resource;
     }
 
@@ -44,5 +46,24 @@ public class UserRepository : CosmosBaseRepository<ApplicationUser>, IUserReposi
                 .WithParameter("@userName", name);
 
         return (await ReadFromFeedAsync(query))?.FirstOrDefault();
+    }
+
+    public Task<List<ApplicationUser>> ReadAllAsync()
+    {
+        var query = new QueryDefinition(@"SELECT * FROM ApplicationUser");
+
+        return ReadFromFeedAsync(query);
+    }
+
+    public async Task InsertSolveAsync(UserSolve solve, string userName)
+    {
+        var user = await ReadByNameAsync(userName);
+
+        var solveNumber = user.Solves.Count + 1;
+        solve.SolveNumber = solveNumber;
+
+        user.Solves.Add(solve);
+
+        await Container.ReplaceItemAsync(user, user.Id);
     }
 }

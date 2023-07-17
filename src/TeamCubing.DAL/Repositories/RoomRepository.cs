@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Cosmos;
+﻿using System.Net;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TeamCubing.DAL.Interfaces;
@@ -74,5 +75,44 @@ public class RoomRepository : CosmosBaseRepository<Room>, IRoomRepository
         var query = new QueryDefinition(@"SELECT * FROM Room");
 
         return ReadFromFeedAsync(query);
+    }
+
+    public Task ReplaceScrambleCachePatch(string roomName, List<string> newScrambles)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Replace("/cachedScrambles", newScrambles),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
+    public Task InsertUserResultPatch(string roomName, int solveIndex, SolveResult newResult)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Add($"/solves/{solveIndex}/results/-", newResult),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
+    public Task InsertNewSolvePatch(string roomName, Solve solve)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Add("/solves/-", solve),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
+    public async Task<bool> RemoveAsync(string roomName)
+    {
+        var deleteResult = await Container.DeleteItemAsync<Room>(
+            roomName,
+            new PartitionKey(roomName));
+
+        return deleteResult.StatusCode == HttpStatusCode.NoContent;
     }
 }
