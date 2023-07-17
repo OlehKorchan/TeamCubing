@@ -8,28 +8,27 @@ namespace TeamCubing.BLL.Services;
 
 public class ScramblerService : IScramblerService
 {
-    public (string Scramble, PuzzleImage Image) GenerateScrambleWithImage(RoomPuzzle puzzle)
+    public ScrambleWithImage GenerateScrambleWithImage(RoomPuzzle puzzle)
     {
+        var result = new ScrambleWithImage();
         Puzzle.PuzzleState puzzleState;
         Puzzle puzzleObject;
-        string scramble = null;
-        PuzzleImage image = null;
         if (IsCubePuzzle(puzzle))
         {
             var cubeSize = (int)puzzle;
             puzzleObject = GetCubePuzzle(cubeSize);
 
-            (scramble, puzzleState) = ScramblePuzzle(puzzleObject);
+            (result.Scramble, puzzleState) = ScramblePuzzle(puzzleObject);
 
-            image = MapToPuzzleImage((puzzleState as CubePuzzle.CubeState)?.Image, cubeSize);
+            result.Image = MapToPuzzleImage((puzzleState as CubePuzzle.CubeState)?.Image, cubeSize);
         }
         else if (puzzle is RoomPuzzle.Megaminx)
         {
             puzzleObject = new MegaminxPuzzle();
-            (scramble, _) = ScramblePuzzle(puzzleObject);
+            (result.Scramble, _) = ScramblePuzzle(puzzleObject);
         }
 
-        return (scramble, image);
+        return result;
     }
 
     private static (string Scramble, Puzzle.PuzzleState State) ScramblePuzzle(Puzzle puzzleObject)

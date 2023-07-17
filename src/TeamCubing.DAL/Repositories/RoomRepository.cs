@@ -75,4 +75,24 @@ public class RoomRepository : CosmosBaseRepository<Room>, IRoomRepository
 
         return ReadFromFeedAsync(query);
     }
+
+    public Task PatchScrambleCache(string roomName, List<ScrambleWithImage> newScrambles)
+    {
+        List<PatchOperation> operations = new ()
+        {
+            PatchOperation.Replace("/cachedScrambles", newScrambles),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(nameof(Room)), operations);
+    }
+
+    public Task PatchUserResults(string roomName, int solveIndex, SolveResult newResult)
+    {
+        List<PatchOperation> operations = new ()
+        {
+            PatchOperation.Add($"/solves/{solveIndex}/results/-", newResult),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(nameof(Room)), operations);
+    }
 }

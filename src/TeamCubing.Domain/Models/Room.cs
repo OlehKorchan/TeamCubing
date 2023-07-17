@@ -1,15 +1,11 @@
-﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace TeamCubing.Domain.Models;
 
-public class Room : ICosmosModel
+public class Room
 {
     [JsonProperty("id")]
     public string Id { get; set; }
-
-    [JsonProperty(nameof(PartitionKey))]
-    public string PartitionKey { get; set; } = "Room";
 
     [JsonProperty("settings")]
     public RoomSettings Settings { get; set; }
@@ -28,10 +24,7 @@ public class Room : ICosmosModel
 
     [JsonProperty("solves")]
     public List<Solve> Solves { get; set; } = new();
-}
 
-public enum RoomType
-{
-    [EnumMember(Value = "MultipleUsers")]
-    MultipleUsers,
+    [JsonProperty("cachedScrambles")]
+    public List<ScrambleWithImage> CachedScrambles { get; set; } = new();
 }

@@ -2,7 +2,7 @@
 
 namespace TeamCubing.Domain.Models;
 
-public class ApplicationUser : ICosmosModel
+public class ApplicationUser
 {
     [JsonProperty("id")]
     public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -18,7 +18,4 @@ public class ApplicationUser : ICosmosModel
 
     [JsonProperty("lastRoomName")]
     public string LastRoomName { get; set; }
-
-    [JsonProperty("partitionKey")]
-    public string PartitionKey { get; set; } = "User";
 }

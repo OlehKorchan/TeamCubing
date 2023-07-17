@@ -14,6 +14,8 @@ namespace TeamCubing.BLL.Services;
 
 public class RoomService : IRoomService
 {
+    private const int MinCachedScrambles = 5;
+    private const int MaxCachedScrambles = 10;
     private const int RoomSolveMaxDurationSeconds = 240;
     private readonly ILogger<RoomService> _logger;
     private readonly IRoomRepository _roomRepository;
@@ -209,9 +211,14 @@ public class RoomService : IRoomService
                     Penalty = request.Penalty,
                 };
 
-                roomSolve.Results.Add(newResult);
+                await _roomRepository.PatchUserResults(
+                    room.Name,
+                    room.Solves.IndexOf(roomSolve),
+                    newResult);
 
-                await _roomRepository.ReplaceAsync(room);
+                // roomSolve.Results.Add(newResult);
+                //
+                // await _roomRepository.ReplaceAsync(room);
 
                 _logger.LogInformation(
                     "New user result added {Result}",
@@ -247,14 +254,14 @@ public class RoomService : IRoomService
     {
         var nextSolveNumber = room.Solves.Count + 1;
 
-        var (scramble, image) = _scramblerService.GenerateScrambleWithImage(room.Settings.Puzzle);
+        var scrambleWithImage = GetScrambleFromCacheOrGenerate(room);
 
         var solve = new Solve
         {
             SolveNumber = nextSolveNumber,
-            Scramble = scramble,
+            Scramble = scrambleWithImage.Scramble,
             StartTime = DateTime.UtcNow,
-            ScrambledPuzzleImage = image,
+            ScrambledPuzzleImage = scrambleWithImage.Image,
         };
 
         room.Solves.Add(solve);
@@ -331,5 +338,38 @@ public class RoomService : IRoomService
         user.LastRoomName = roomName;
 
         await _userRepository.ReplaceAsync(user);
+    }
+
+    private ScrambleWithImage GetScrambleFromCacheOrGenerate(Room room)
+    {
+        var result = room.CachedScrambles.LastOrDefault();
+
+        if (result is null)
+        {
+            result = _scramblerService.GenerateScrambleWithImage(room.Settings.Puzzle);
+
+            Task.Run(() => UpdateCachedScrambles(room));
+        }
+        else
+        {
+            room.CachedScrambles.Remove(result);
+
+            if (room.CachedScrambles.Count < MinCachedScrambles)
+            {
+                Task.Run(() => UpdateCachedScrambles(room));
+            }
+        }
+
+        return result;
+    }
+
+    private async Task UpdateCachedScrambles(Room room)
+    {
+        for (var i = 0; i < MaxCachedScrambles - room.CachedScrambles.Count; i++)
+        {
+            room.CachedScrambles.Add(_scramblerService.GenerateScrambleWithImage(room.Settings.Puzzle));
+        }
+
+        await _roomRepository.PatchScrambleCache(room.Name, room.CachedScrambles);
     }
 }

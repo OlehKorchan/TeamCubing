@@ -98,6 +98,11 @@ public class AuthService : IAuthService
         return response;
     }
 
+    public Task<List<ApplicationUser>> GetAllAsync()
+    {
+        return _userRepository.ReadAllAsync();
+    }
+
     private async Task<bool> ValidateRegistrationAsync(
         RegisterRequestModel requestModel,
         BaseResponse response)

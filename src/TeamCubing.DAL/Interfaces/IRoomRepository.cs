@@ -11,4 +11,8 @@ public interface IRoomRepository : ICrudRepository<Room>
     Task ReplaceManyAsync(IEnumerable<Room> items);
 
     Task<List<Room>> ReadAllAsync();
+
+    Task PatchScrambleCache(string roomName, List<ScrambleWithImage> newScrambles);
+
+    Task PatchUserResults(string roomName, int solveIndex, SolveResult newResult);
 }
