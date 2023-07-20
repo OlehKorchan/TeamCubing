@@ -23,6 +23,8 @@ import { InputTimeDirective } from './directives/input-time.directive';
 import { SolveInfoComponent } from './components/solve-info/solve-info.component';
 import { ConnectionErrorDialogComponent } from './components/connection-error-dialog/connection-error-dialog.component';
 import { ChangePuzzleVerificationDialogComponent } from './components/rooms/change-puzzle-verification-dialog/change-puzzle-verification-dialog.component';
+import { PersonalResultsComponent } from './components/personal-results/personal-results.component';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @NgModule({
   declarations: [
@@ -39,6 +41,7 @@ import { ChangePuzzleVerificationDialogComponent } from './components/rooms/chan
     SolveInfoComponent,
     ConnectionErrorDialogComponent,
     ChangePuzzleVerificationDialogComponent,
+    PersonalResultsComponent,
   ],
   imports: [
     SharedModule,
@@ -50,6 +53,7 @@ import { ChangePuzzleVerificationDialogComponent } from './components/rooms/chan
     LayoutModule,
     RouterModule,
     MatTooltipModule,
+    MatExpansionModule,
   ],
   providers: [
     {
