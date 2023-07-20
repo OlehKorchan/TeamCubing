@@ -1,14 +1,44 @@
 ﻿import { Injectable } from '@angular/core';
-import { Penalty, Solve, SolveResult } from '../models/solve';
+import { BaseSolveResult, Penalty, Solve, SolveResult } from '../models/solve';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
 import { ConfigurationService } from '../shared/services/configuration.service';
 import { RoomPuzzle } from '../models/roomSettings';
+import { SolveInfoComponent } from '../components/solve-info/solve-info.component';
+import { MatDialog } from '@angular/material/dialog';
+import { MsToTimePipe } from '../pipes/ms-to-time.pipe';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SolveService {
-  public constructor(private auth: AuthenticationService, private config: ConfigurationService) {}
+  private readonly emptyTime: string = '--:--';
+
+  public availablePuzzles: RoomPuzzle[] = [
+    RoomPuzzle.ThreeByThreeCube,
+    RoomPuzzle.Megaminx,
+    RoomPuzzle.TwoByTwoCube,
+    RoomPuzzle.FourByFourCube,
+    RoomPuzzle.FiveByFiveCube,
+    RoomPuzzle.SixBySixCube,
+    RoomPuzzle.SevenBySevenCube,
+  ];
+
+  public constructor(
+    private auth: AuthenticationService,
+    private config: ConfigurationService,
+    private dialog: MatDialog,
+  ) {}
+
+  public formatResult(result: BaseSolveResult | undefined): string {
+    if (result?.time) {
+      const msToTimePipe = new MsToTimePipe();
+      const isDnf = result.penalty === Penalty.DNF;
+
+      return msToTimePipe.transform(result.time, isDnf);
+    }
+
+    return this.emptyTime;
+  }
 
   public isBestResult(solve: Solve, result: SolveResult): boolean {
     return (
@@ -130,6 +160,16 @@ export class SolveService {
 
         return one?.time > two?.time ? -1 : 1;
       });
+  }
+
+  public openSolveInfo(scramble: string, time: string): void {
+    this.dialog.open(SolveInfoComponent, {
+      data: {
+        scramble: scramble,
+        time: time,
+      },
+      width: '300px',
+    });
   }
 
   private pullUserValidResults(take: number, solves: Solve[], user: string): SolveResult[] {

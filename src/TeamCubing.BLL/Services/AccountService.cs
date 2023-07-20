@@ -1,9 +1,12 @@
-﻿using System.Security.Cryptography;
+﻿using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using TeamCubing.BLL.Helpers.Extensions;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.DAL.Interfaces;
+using TeamCubing.Domain.Extensions;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
@@ -11,22 +14,25 @@ using TeamCubing.Domain.Settings;
 
 namespace TeamCubing.BLL.Services;
 
-public class AuthService : IAuthService
+public class AccountService : IAccountService
 {
     private readonly IJwtGenerator _jwtGenerator;
     private readonly JwtSettings _jwtSettings;
-    private readonly ILogger<AuthService> _logger;
+    private readonly ILogger<AccountService> _logger;
     private readonly IUserRepository _userRepository;
+    private readonly ClaimsPrincipal _user;
 
-    public AuthService(
+    public AccountService(
         IJwtGenerator jwtGenerator,
-        ILogger<AuthService> logger,
+        ILogger<AccountService> logger,
         IOptions<Settings> settings,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        ClaimsPrincipal user)
     {
         _jwtGenerator = jwtGenerator;
         _logger = logger;
         _userRepository = userRepository;
+        _user = user;
         _jwtSettings = settings.Value.JwtSettings;
     }
 
@@ -102,6 +108,53 @@ public class AuthService : IAuthService
     public Task<List<ApplicationUser>> GetAllAsync()
     {
         return _userRepository.ReadAllAsync();
+    }
+
+    public async Task<UserStatisticsResponse> GetUserStatistics()
+    {
+        var user = await _userRepository.ReadByNameAsync(_user.UserName());
+
+        var allResultsByPuzzle = user.Solves.GroupBy(s => s.Puzzle);
+
+        var bestResultsByPuzzle = allResultsByPuzzle
+            .Select(
+                pg =>
+                {
+                    var bestResult = pg
+                        .Where(solve => solve.Penalty != Penalty.DNF)
+                        .MinBy(s => s.Time);
+
+                    return new BestUserResultsByPuzzleResponse
+                    {
+                        Event = pg.Key,
+                        Single = new BaseSolveResult
+                        {
+                            Time = bestResult.Time,
+                            Penalty = bestResult.Penalty
+                        },
+                        Average = pg.CalculateBestAverage(5),
+                    };
+                })
+            .ToList();
+
+        return new UserStatisticsResponse
+        {
+            AllResultsByPuzzles = user.Solves,
+            // AllResultsByPuzzles = allResultsByPuzzle.Select(
+            //         r => new AllResultsByPuzzleResponse
+            //         {
+            //             Puzzle = r.Key,
+            //             Results = r.Select(
+            //                     result => new BaseSolveResult
+            //                     {
+            //                         Time = result.Time,
+            //                         Penalty = result.Penalty,
+            //                     })
+            //                 .ToList(),
+            //         })
+            //     .ToList(),
+            BestResultsByPuzzle = bestResultsByPuzzle,
+        };
     }
 
     private async Task<bool> ValidateRegistrationAsync(

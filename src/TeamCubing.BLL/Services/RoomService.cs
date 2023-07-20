@@ -268,7 +268,7 @@ public class RoomService : IRoomService
                     room.Solves.IndexOf(roomSolve),
                     newResult);
                 var userUpdate = _userRepository.InsertSolveAsync(
-                    new UserSolve
+                    new UserSolveResult
                     {
                         RoomName = room.Name,
                         Puzzle = room.Settings.Puzzle,

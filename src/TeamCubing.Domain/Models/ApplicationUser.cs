@@ -20,5 +20,5 @@ public class ApplicationUser
     public string LastRoomName { get; set; }
 
     [JsonProperty("solves")]
-    public List<UserSolve> Solves { get; set; } = new();
+    public List<UserSolveResult> Solves { get; set; } = new();
 }

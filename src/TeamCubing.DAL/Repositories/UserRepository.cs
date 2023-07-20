@@ -55,14 +55,14 @@ public class UserRepository : CosmosBaseRepository<ApplicationUser>, IUserReposi
         return ReadFromFeedAsync(query);
     }
 
-    public async Task InsertSolveAsync(UserSolve solve, string userName)
+    public async Task InsertSolveAsync(UserSolveResult solveResult, string userName)
     {
         var user = await ReadByNameAsync(userName);
 
         var solveNumber = user.Solves.Count + 1;
-        solve.SolveNumber = solveNumber;
+        solveResult.SolveNumber = solveNumber;
 
-        user.Solves.Add(solve);
+        user.Solves.Add(solveResult);
 
         await Container.ReplaceItemAsync(user, user.Id);
     }
