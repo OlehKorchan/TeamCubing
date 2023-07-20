@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TeamCubing.BLL.Helpers;
 using TeamCubing.BLL.Interfaces;
@@ -12,20 +13,28 @@ namespace TeamCubing.API.Controllers;
 public class AccountController : ControllerBase
 {
     private readonly ILogger<AccountController> _logger;
-    private readonly IAuthService _authService;
+    private readonly IAccountService _accountService;
 
     public AccountController(
         ILogger<AccountController> logger,
-        IAuthService authService)
+        IAccountService accountService)
     {
         _logger = logger;
-        _authService = authService;
+        _accountService = accountService;
+    }
+
+    [HttpGet("results")]
+    [Authorize]
+    public async Task<IActionResult> GetUserResults()
+    {
+        return Ok(await _accountService.GetUserStatistics());
     }
 
     [HttpGet]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> GetAllUsers()
     {
-        return Ok(await _authService.GetAllAsync());
+        return Ok(await _accountService.GetAllAsync());
     }
 
     [HttpPost("register")]
@@ -36,7 +45,7 @@ public class AccountController : ControllerBase
 
         if (ModelState.IsValid)
         {
-            responseModel = await _authService.RegisterAsync(registerModel);
+            responseModel = await _accountService.RegisterAsync(registerModel);
         }
         else
         {
@@ -59,7 +68,7 @@ public class AccountController : ControllerBase
 
         if (ModelState.IsValid)
         {
-            responseModel = await _authService.LoginAsync(loginModel);
+            responseModel = await _accountService.LoginAsync(loginModel);
         }
         else
         {

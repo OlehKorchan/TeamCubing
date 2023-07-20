@@ -8,8 +8,11 @@ export interface Solve {
   scrambledPuzzleImage: PuzzleImage;
 }
 
-export interface SolveResult {
+export interface SolveResult extends BaseSolveResult {
   userName: string;
+}
+
+export interface BaseSolveResult {
   time: number;
   penalty: Penalty;
 }

@@ -1,0 +1,79 @@
+<div class="container">
+  <table
+    mat-table
+    [dataSource]="userResults.bestResultsByPuzzle"
+    class="mat-elevation-z8 full-width mb-3"
+  >
+    <ng-container matColumnDef="Event">
+      <th mat-header-cell *matHeaderCellDef>Event</th>
+      <td mat-cell *matCellDef="let element">{{ solveService.puzzleToString(element.event) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="Single">
+      <th mat-header-cell *matHeaderCellDef>Single</th>
+      <td mat-cell *matCellDef="let element">
+        {{ element.single.time | msToTime: element.single.penalty === Penalty.DNF }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="Average">
+      <th mat-header-cell *matHeaderCellDef>Average</th>
+      <td mat-cell *matCellDef="let element">
+        {{ element.average.time | msToTime: false:element.average.penalty === Penalty.DNF }}
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="bestResultsDisplayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: bestResultsDisplayedColumns"></tr>
+  </table>
+  <mat-accordion>
+    <mat-expansion-panel *ngFor="let puzzle of solveService.availablePuzzles">
+      <mat-expansion-panel-header>
+        <mat-panel-title> {{ solveService.puzzleToString(puzzle) }} Puzzle results</mat-panel-title>
+        <!--        <mat-panel-description> Currently I am </mat-panel-description>-->
+      </mat-expansion-panel-header>
+      <div class="container">
+        <table mat-table [dataSource]="resultsByPuzzle(puzzle)" class="mat-elevation-z8 full-width">
+          <ng-container matColumnDef="Time">
+            <th mat-header-cell *matHeaderCellDef>Time</th>
+            <td mat-cell *matCellDef="let element">
+              <button
+                mat-button
+                (click)="
+                  solveService.openSolveInfo(
+                    element.scramble,
+                    solveService.formatResult({
+                      penalty: element.penalty,
+                      time: element.time
+                    })
+                  )
+                "
+              >
+                {{ element.time | msToTime: element.penalty === Penalty.DNF }}
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Date">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let element">
+              {{ element.date | date }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Room">
+            <th mat-header-cell *matHeaderCellDef>Room</th>
+            <td mat-cell *matCellDef="let element">
+              <button mat-button [routerLink]="['/rooms', element.roomName]">
+                {{ element.roomName }}
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="allResultsDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: allResultsDisplayedColumns"></tr>
+        </table>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+</div>

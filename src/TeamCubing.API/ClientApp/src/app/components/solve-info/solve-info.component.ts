@@ -1,9 +1,8 @@
 import { Component, Inject } from '@angular/core';
-import { Solve } from '../../models/solve';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 export interface DialogData {
-  solve: Solve;
+  scramble: string;
   time: string;
 }
 

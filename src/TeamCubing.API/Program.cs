@@ -160,7 +160,7 @@ void ConfigureServices()
 {
     builder.Services.AddSingleton<IRoomRepository, RoomRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
-    builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<IAccountService, AccountService>();
     builder.Services.AddTransient<IJwtGenerator, JwtGenerator>();
     builder.Services.AddTransient<IRoomService, RoomService>();
     builder.Services.AddTransient<IScramblerService, ScramblerService>();

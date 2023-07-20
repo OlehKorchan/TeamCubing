@@ -8,9 +8,7 @@ import { Location } from '@angular/common';
 import { ConfigurationService } from '../../shared/services/configuration.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ModelResponse } from '../../models/modelResponse';
-import {
-  AuthenticationService
-} from '../../modules/authentication/services/authentication.service';
+import { AuthenticationService } from '../../modules/authentication/services/authentication.service';
 import { MsToTimePipe } from '../../pipes/ms-to-time.pipe';
 import { SolveService } from '../../services/solve.service';
 import { not } from 'rxjs/internal/util/not';
@@ -20,10 +18,7 @@ import { RoomLoginRequest } from '../../models/roomLoginRequest';
 import { RoomDisplayDataResponse } from '../../models/roomDisplayDataResponse';
 import { RoomPuzzle } from '../../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
-import { SolveInfoComponent } from '../solve-info/solve-info.component';
-import {
-  ChangePuzzleVerificationDialogComponent
-} from './change-puzzle-verification-dialog/change-puzzle-verification-dialog.component';
+import { ChangePuzzleVerificationDialogComponent } from './change-puzzle-verification-dialog/change-puzzle-verification-dialog.component';
 import { DialogComponent } from '../dialog/dialog.component';
 
 @Component({
@@ -103,9 +98,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
   }
 
   public get remainingPercents(): number {
-    return (
-      this.timeToNextSolve / this.config.getTimeToNextSolve()
-    ) * 100;
+    return (this.timeToNextSolve / this.config.getTimeToNextSolve()) * 100;
   }
 
   public ngOnInit(): void {
@@ -214,16 +207,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
     return solve.results?.find((s: SolveResult) => s.userName === user);
   }
 
-  public openSolveInfo(solve: Solve, time: string): void {
-    this.dialog.open(SolveInfoComponent, {
-      data: {
-        solve: solve,
-        time: time,
-      },
-      width: '300px',
-    });
-  }
-
   public colorUserResult(user: string, solve: Solve): 'green' | 'black' {
     const currentResult: SolveResult | undefined = this.getUserResult(solve, user);
 
@@ -285,17 +268,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
     }
 
     return 'black';
-  }
-
-  public formatResult(result: SolveResult | undefined): string {
-    if (result?.time) {
-      const msToTimePipe = new MsToTimePipe();
-      const isDnf = result.penalty === Penalty.DNF;
-
-      return msToTimePipe.transform(result.time, isDnf);
-    }
-
-    return this.emptyTime;
   }
 
   public loadAllResults(): void {
