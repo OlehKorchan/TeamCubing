@@ -20,19 +20,22 @@ export class CubeImageComponent {
   public get isImageablePuzzleType(): boolean {
     return (
       this.scrambledCube &&
-      (
-        this.puzzleType === RoomPuzzle.TwoByTwoCube ||
+      (this.puzzleType === RoomPuzzle.TwoByTwoCube ||
         this.puzzleType === RoomPuzzle.ThreeByThreeCube ||
         this.puzzleType === RoomPuzzle.FourByFourCube ||
         this.puzzleType === RoomPuzzle.FiveByFiveCube ||
         this.puzzleType === RoomPuzzle.SixBySixCube ||
-        this.puzzleType === RoomPuzzle.SevenBySevenCube
-      )
+        this.puzzleType === RoomPuzzle.SevenBySevenCube ||
+        this.puzzleType === RoomPuzzle.ThreeByThreeBld ||
+        this.puzzleType === RoomPuzzle.FourByFourBld ||
+        this.puzzleType === RoomPuzzle.FiveByFiveBld)
     );
   }
 
   public get cubeSize(): number {
-    return this.puzzleType;
+    const res = (this.puzzleType as number) % 11;
+
+    return res;
   }
 
   public getRGBColor(color: Color): string {

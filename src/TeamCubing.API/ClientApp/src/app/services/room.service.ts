@@ -4,7 +4,7 @@ import { Observable, Subject } from 'rxjs';
 import { Solve, SolveResult } from '../models/solve';
 import { Room } from '../models/room';
 import { HttpClient } from '@angular/common/http';
-import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { AuthenticationService } from '../modules/authentication/services/authentication.service';
 import { ModelResponse } from '../models/modelResponse';
 import { RoomCreateRequest } from '../models/roomCreateRequest';
@@ -12,11 +12,11 @@ import { RoomDisplayDataResponse } from '../models/roomDisplayDataResponse';
 import { RoomLoginRequest } from '../models/roomLoginRequest';
 import { NewUserResult } from '../models/newUserResult';
 import { MatDialog } from '@angular/material/dialog';
-import {
-  ConnectionErrorDialogComponent
-} from '../components/connection-error-dialog/connection-error-dialog.component';
+import { ConnectionErrorDialogComponent } from '../components/connection-error-dialog/connection-error-dialog.component';
 import { ChangePuzzleRequest } from '../models/ChangePuzzleRequest';
 import { RoomPuzzle } from '../models/roomSettings';
+import { ResultRemoveResponse } from '../models/result-remove-response';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -34,6 +34,7 @@ export class RoomService {
   private readonly leaveRoomMethodName: string = 'LeaveGroup';
   private readonly changePuzzleMethodName: string = 'ChangePuzzle';
   private readonly roomRemovedMethodName: string = 'Removed';
+  private readonly resultRemovedMethodName: string = 'ResultRemove';
   private hubConnection!: HubConnection;
   private results$: Subject<SolveResult> = new Subject<SolveResult>();
   private users$: Subject<string> = new Subject<string>();
@@ -41,12 +42,14 @@ export class RoomService {
   private solveFinished$: EventEmitter<Solve> = new EventEmitter<Solve>();
   private puzzleChanged$: Subject<RoomPuzzle> = new Subject<RoomPuzzle>();
   private roomRemoved$: Subject<void> = new Subject();
+  private resultRemoved$: Subject<ResultRemoveResponse> = new Subject<ResultRemoveResponse>();
 
   public constructor(
     private config: ConfigurationService,
     private httpClient: HttpClient,
     private auth: AuthenticationService,
     private dialog: MatDialog,
+    private router: Router,
   ) {}
 
   public results(): Observable<SolveResult> {
@@ -73,12 +76,23 @@ export class RoomService {
     return this.roomRemoved$.asObservable();
   }
 
-  public startConnection(): Promise<void> {
+  public resultRemoved(): Observable<ResultRemoveResponse> {
+    return this.resultRemoved$.asObservable();
+  }
+
+  public startConnection(roomName: string): Promise<void> {
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(this.config.getApiUrl() + this.hubEndpoint, {
         accessTokenFactory: () => this.auth.getToken(),
       })
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Information)
       .build();
+
+    this.hubConnection.onreconnected(() => {
+      this.router.navigate(['rooms', roomName]);
+    });
+
     return this.hubConnection.start().catch((err) => {
       console.log('Hub connection error: ' + err);
       this.dialog.open(ConnectionErrorDialogComponent, {
@@ -94,6 +108,7 @@ export class RoomService {
     this.addSolveFinishedListener();
     this.addChangePuzzleListener();
     this.addRoomRemovedListener();
+    this.addResultRemovedListener();
   }
 
   public addUserLeftListener(): void {
@@ -132,6 +147,12 @@ export class RoomService {
   public addRoomRemovedListener(): void {
     this.hubConnection.on(this.roomRemovedMethodName, () => {
       this.roomRemoved$.next();
+    });
+  }
+
+  public addResultRemovedListener(): void {
+    this.hubConnection.on(this.resultRemovedMethodName, (response: ResultRemoveResponse) => {
+      this.resultRemoved$.next(response);
     });
   }
 
@@ -195,15 +216,39 @@ export class RoomService {
     );
   }
 
-  public logoutRoom(): Observable<boolean> {
-    return this.httpClient.get<boolean>(
-      this.config.getApiUrl() + this.roomsEndpoint + '/leaveCurrentRoom/',
+  public kickUser(userName: string): Observable<void> {
+    return this.httpClient.get<void>(
+      this.config.getApiUrl() + this.roomsEndpoint + '/kick/' + userName,
     );
   }
 
   public removeRoom(roomName: string): Observable<boolean> {
     return this.httpClient.delete<boolean>(
       this.config.getApiUrl() + this.roomsEndpoint + '/' + roomName,
+    );
+  }
+
+  public removeSolve(roomName: string, solveNumber: number): Observable<boolean> {
+    return this.httpClient.delete<boolean>(
+      this.config.getApiUrl() + this.roomsEndpoint + '/' + roomName + '/solves/' + solveNumber,
+    );
+  }
+
+  public removeUserResult(
+    roomName: string,
+    solveNumber: number,
+    user: string,
+  ): Observable<boolean> {
+    return this.httpClient.delete<boolean>(
+      this.config.getApiUrl() +
+        this.roomsEndpoint +
+        '/' +
+        roomName +
+        '/solves/' +
+        solveNumber +
+        '/user/' +
+        user +
+        '/result',
     );
   }
 }

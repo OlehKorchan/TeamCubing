@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Net;
+using System.Security.Claims;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using TeamCubing.BLL.Helpers.Extensions;
@@ -9,6 +10,7 @@ using TeamCubing.Domain.Extensions;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
+using TeamCubing.Domain.Settings;
 
 namespace TeamCubing.BLL.Services;
 
@@ -182,6 +184,83 @@ public class RoomService : IRoomService
         return response;
     }
 
+    public async Task<BaseResponse> RemoveUserResultFromRoom(RemoveUserResultRequest request)
+    {
+        var response = new BaseResponse();
+
+        var room = await _roomRepository.ReadByNameAsync(request.RoomName);
+
+        if (room is null)
+        {
+            response.ErrorMessage = Messages.RoomNotFoundMessage;
+            response.StatusCode = HttpStatusCode.NotFound;
+
+            return response;
+        }
+
+        if (room.AdministratorName == _user.UserName() || request.UserName == _user.UserName())
+        {
+            var solveToUpdate = room.Solves.FirstOrDefault(s => s.SolveNumber == request.SolveNumber);
+
+            if (solveToUpdate is null)
+            {
+                response.ErrorMessage = Messages.SolveNotFoundMessage;
+                response.StatusCode = HttpStatusCode.NotFound;
+
+                return response;
+            }
+
+            solveToUpdate.Results = solveToUpdate.Results.Where(r => r.UserName != request.UserName).ToList();
+            await _roomRepository.ReplaceSolvePatch(request.RoomName, room.Solves.IndexOf(solveToUpdate), solveToUpdate);
+
+            response.IsSuccess = true;
+
+            return response;
+        }
+
+        response.StatusCode = HttpStatusCode.Forbidden;
+
+        return response;
+    }
+
+    public async Task<BaseResponse> RemoveSolveAsync(RemoveSolveRequest request)
+    {
+        var response = new BaseResponse();
+
+        var room = await _roomRepository.ReadByNameAsync(request.RoomName);
+
+        if (room is null)
+        {
+            response.ErrorMessage = Messages.RoomNotFoundMessage;
+            response.StatusCode = HttpStatusCode.NotFound;
+
+            return response;
+        }
+
+        if (room.AdministratorName == _user.UserName())
+        {
+            var solveToRemove = room.Solves.FirstOrDefault(s => s.SolveNumber == request.SolveNumber);
+
+            if (solveToRemove is null)
+            {
+                response.ErrorMessage = Messages.SolveNotFoundMessage;
+                response.StatusCode = HttpStatusCode.NotFound;
+
+                return response;
+            }
+
+            await _roomRepository.RemoveSolvePatch(request.RoomName, room.Solves.IndexOf(solveToRemove));
+
+            response.IsSuccess = true;
+
+            return response;
+        }
+
+        response.StatusCode = HttpStatusCode.Forbidden;
+
+        return response;
+    }
+
     public async Task<List<RoomDisplayDataResponse>> GetAllRoomsDataAsync()
     {
         var allRooms = await _roomRepository.ReadAllAsync();
@@ -294,9 +373,14 @@ public class RoomService : IRoomService
         return methodResult;
     }
 
-    public async Task<string> LeaveLastRoomAsync()
+    public async Task<string> LeaveLastRoomAsync(string userName = null)
     {
-        var lastRoomName = (await _userRepository.ReadByNameAsync(_user.UserName())).LastRoomName;
+        if (string.IsNullOrEmpty(userName))
+        {
+            userName = _user.UserName();
+        }
+
+        var lastRoomName = (await _userRepository.ReadByNameAsync(userName)).LastRoomName;
 
         if (string.IsNullOrEmpty(lastRoomName))
         {
@@ -304,7 +388,13 @@ public class RoomService : IRoomService
         }
 
         var lastRoom = await _roomRepository.ReadByNameAsync(lastRoomName);
-        lastRoom.ConnectedUserNames.Remove(_user.UserName());
+
+        if (lastRoom.AdministratorName != _user.UserName())
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        lastRoom.ConnectedUserNames.Remove(userName);
 
         await _roomRepository.ReplaceAsync(lastRoom);
 

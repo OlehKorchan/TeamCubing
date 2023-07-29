@@ -65,6 +65,7 @@ public class AccountService : IAccountService
 
     public async Task<RegisterResponseModel> RegisterAsync(RegisterRequestModel request)
     {
+        request.UserName = request.UserName.Trim(' ');
         var response = new RegisterResponseModel();
 
         if (!await ValidateRegistrationAsync(request, response))
@@ -140,6 +141,7 @@ public class AccountService : IAccountService
         return new UserStatisticsResponse
         {
             AllResultsByPuzzles = user.Solves,
+            // TODO: Define if I will need this code later and remove/move it to other method
             // AllResultsByPuzzles = allResultsByPuzzle.Select(
             //         r => new AllResultsByPuzzleResponse
             //         {

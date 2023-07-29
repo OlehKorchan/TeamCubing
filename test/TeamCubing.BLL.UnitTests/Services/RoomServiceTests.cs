@@ -317,7 +317,7 @@ public class RoomServiceTests
             .ReturnsAsync(roomWithUser);
 
         // Act
-        var previousRoomName = await _sut.LeaveLastRoomAsync();
+        var previousRoomName = await _sut.LeaveLastRoomAsync(TODO);
 
         // Assert
         previousRoomName.Should().BeEquivalentTo(roomWithUser.Name);
@@ -342,7 +342,7 @@ public class RoomServiceTests
             .ReturnsAsync(TestFixture.GetCurrentUser());
 
         // Act
-        var previousRoomName = await _sut.LeaveLastRoomAsync();
+        var previousRoomName = await _sut.LeaveLastRoomAsync(TODO);
 
         // Assert
         previousRoomName.Should().BeNullOrEmpty();

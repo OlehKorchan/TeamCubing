@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using TeamCubing.API.Hubs;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.RequestModels;
+using TeamCubing.Domain.ResponseModels;
 
 namespace TeamCubing.API.Controllers;
 
@@ -28,10 +30,20 @@ public class RoomsController : ControllerBase
         return Ok(await _roomService.GetAllRoomsDataAsync());
     }
 
-    [HttpGet("leaveCurrentRoom")]
-    public async Task<IActionResult> LeaveRoomAsync()
+    [HttpGet("kick/{userName}")]
+    public async Task<IActionResult> LeaveRoomAsync(string userName)
     {
-        return Ok(await _roomService.LeaveLastRoomAsync());
+        var leftRoomName = await _roomService.LeaveLastRoomAsync(userName);
+
+        if (string.IsNullOrEmpty(leftRoomName))
+        {
+            return NotFound();
+        }
+
+        await _roomHub.Clients.Group(leftRoomName).SendAsync("UserLeft", userName);
+
+        return Ok();
+
     }
 
     [HttpGet("checkAccess/{roomName}")]
@@ -76,5 +88,61 @@ public class RoomsController : ControllerBase
         var result = await _roomService.LoginToRoomAsync(request);
 
         return Ok(result);
+    }
+
+    [HttpDelete("{roomName}/solves/{solveNumber:int}")]
+    public async Task<IActionResult> RemoveSolve(
+        [FromRoute] string roomName,
+        [FromRoute] int solveNumber)
+    {
+        var result = await _roomService.RemoveSolveAsync(new RemoveSolveRequest
+        {
+            RoomName = roomName,
+            SolveNumber = solveNumber
+        });
+
+        if (result.IsSuccess)
+        {
+            await _roomHub.Clients.Group(roomName).SendAsync("ResultRemove", solveNumber);
+            return Ok(true);
+        }
+
+        if (result.StatusCode is HttpStatusCode.Forbidden)
+        {
+            return new ForbidResult();
+        }
+
+        return Ok(false);
+    }
+
+    [HttpDelete("{roomName}/solves/{solveNumber:int}/user/{userName}/result")]
+    public async Task<IActionResult> RemoveUserResult(
+        [FromRoute] string roomName,
+        [FromRoute] int solveNumber,
+        [FromRoute] string userName)
+    {
+        var result = await _roomService.RemoveUserResultFromRoom(new RemoveUserResultRequest
+        {
+            RoomName = roomName,
+            SolveNumber = solveNumber,
+            UserName = userName
+        });
+
+        if (result.IsSuccess)
+        {
+            await _roomHub.Clients.Group(roomName).SendAsync("ResultRemove", new UserResultRemoveResponseModel
+            {
+                SolveNumber = solveNumber,
+                UserName = userName
+            });
+            return Ok(true);
+        }
+
+        if (result.StatusCode is HttpStatusCode.Forbidden)
+        {
+            return new ForbidResult();
+        }
+
+        return Ok(false);
     }
 }
