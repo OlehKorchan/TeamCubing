@@ -13,7 +13,7 @@ public interface IRoomService
 
     Task<List<RoomDisplayDataResponse>> GetAllRoomsDataAsync();
 
-    Task<string> LeaveLastRoomAsync();
+    Task<string> LeaveLastRoomAsync(string userName = null);
 
     Task<RoomLoginResponse> LoginToRoomAsync(RoomLoginRequest loginDto);
 
@@ -25,4 +25,8 @@ public interface IRoomService
     Task<ModelResponse<Room>> ChangeRoomPuzzleAsync(ChangePuzzleRequest request);
 
     Task<RoomOperationResponse<Room>> RemoveRoomAsync(string roomId);
+
+    Task<BaseResponse> RemoveUserResultFromRoom(RemoveUserResultRequest request);
+
+    Task<BaseResponse> RemoveSolveAsync(RemoveSolveRequest request);
 }

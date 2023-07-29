@@ -21,6 +21,9 @@ export class SolveService {
     RoomPuzzle.FiveByFiveCube,
     RoomPuzzle.SixBySixCube,
     RoomPuzzle.SevenBySevenCube,
+    RoomPuzzle.ThreeByThreeBld,
+    RoomPuzzle.FourByFourBld,
+    RoomPuzzle.FiveByFiveBld,
   ];
 
   public constructor(
@@ -127,6 +130,12 @@ export class SolveService {
 
   public puzzleToString(puzzle: RoomPuzzle): string {
     switch (puzzle) {
+      case RoomPuzzle.ThreeByThreeBld:
+        return '3x3x3 Blindfolded';
+      case RoomPuzzle.FourByFourBld:
+        return '4x4x4 Blindfolded';
+      case RoomPuzzle.FiveByFiveBld:
+        return '5x5x5 Blindfolded';
       case RoomPuzzle.Megaminx:
         return 'Megaminx';
       case RoomPuzzle.TwoByTwoCube:

@@ -23,8 +23,10 @@ public static class SolvesExtension
         {
             result.Time = nonDnfResults.MinBy(s => s.Time).Time;
         }
-
-        result.Penalty = Penalty.DNF;
+        else
+        {
+            result.Penalty = Penalty.DNF;
+        }
 
         return result;
     }

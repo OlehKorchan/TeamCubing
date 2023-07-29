@@ -190,21 +190,9 @@ export class TimerComponent implements OnInit, OnDestroy {
   public updateTime(): void {
     if (this.inputTime && this.inputTime > 0) {
       const microseconds = this.inputTime % 100;
-      const seconds = parseInt((
-        (
-          this.inputTime % 10000
-        ) / 100
-      ).toString());
-      const minutes = parseInt((
-        (
-          this.inputTime % 1000000
-        ) / 10000
-      ).toString());
-      const hours = parseInt((
-        (
-          this.inputTime % 100000000
-        ) / 1000000
-      ).toString());
+      const seconds = parseInt(((this.inputTime % 10000) / 100).toString());
+      const minutes = parseInt(((this.inputTime % 1000000) / 10000).toString());
+      const hours = parseInt(((this.inputTime % 100000000) / 1000000).toString());
       this.timeInMilliseconds =
         microseconds * 10 + seconds * 1000 + minutes * 60000 + hours * 3600000;
       this.timerStopped.next(this.timeInMilliseconds);

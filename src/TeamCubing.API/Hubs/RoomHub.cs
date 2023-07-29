@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Azure.Cosmos.Linq;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.Domain.Extensions;
 using TeamCubing.Domain.RequestModels;

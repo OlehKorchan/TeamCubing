@@ -107,6 +107,26 @@ public class RoomRepository : CosmosBaseRepository<Room>, IRoomRepository
         return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
     }
 
+    public Task ReplaceSolvePatch(string roomName, int solveIndex, Solve solve)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Replace($"/solves/{solveIndex}", solve),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
+    public Task RemoveSolvePatch(string roomName, int solveIndex)
+    {
+        List<PatchOperation> operations = new()
+        {
+            PatchOperation.Remove($"/solves/{solveIndex}"),
+        };
+
+        return Container.PatchItemAsync<Room>(roomName, new PartitionKey(roomName), operations);
+    }
+
     public async Task<bool> RemoveAsync(string roomName)
     {
         var deleteResult = await Container.DeleteItemAsync<Room>(

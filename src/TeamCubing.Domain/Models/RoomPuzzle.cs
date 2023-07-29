@@ -9,4 +9,7 @@ public enum RoomPuzzle
     SixBySixCube = 6,
     SevenBySevenCube = 7,
     Megaminx = 12,
+    ThreeByThreeBld = 333,
+    FourByFourBld = 444,
+    FiveByFiveBld = 555
 }

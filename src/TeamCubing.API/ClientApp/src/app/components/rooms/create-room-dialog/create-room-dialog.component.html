@@ -5,7 +5,7 @@
       <mat-form-field>
         <mat-label>Puzzle</mat-label>
         <mat-select formControlName="puzzle">
-          <mat-option *ngFor="let puzzle of availablePuzzles" [value]="puzzle">
+          <mat-option *ngFor="let puzzle of solveService.availablePuzzles" [value]="puzzle">
             {{ solveService.puzzleToString(puzzle) }}
           </mat-option>
         </mat-select>

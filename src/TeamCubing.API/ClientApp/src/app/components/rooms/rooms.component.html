@@ -8,12 +8,12 @@
           (selectionChange)="changePuzzle()"
           [disabled]="!isAdmin(room.administratorName)"
         >
-          <mat-option *ngFor="let puzzle of availablePuzzles" [value]="puzzle">
+          <mat-option *ngFor="let puzzle of solveService.availablePuzzles" [value]="puzzle">
             {{ solveService.puzzleToString(puzzle) }}
           </mat-option>
         </mat-select>
       </mat-form-field>
-      <div class="row align-items-baseline">
+      <div class="row">
         <div class="col-sm-12 col-md-5 text-center justify-content-center px-1 mx-1">
           <div *ngIf="room.settings.enableSolveTimeLimit" class="mb-1">
             <mat-progress-bar
@@ -31,7 +31,7 @@
             [scramble]="isResultSent ? EmptyScrambleMessage : currentSolve.scramble"
           ></app-timer>
         </div>
-        <div class="col-sm-12 col-md-6 mt-3 px-1 mx-1">
+        <div class="col-sm-12 col-md-6 px-1 mx-1">
           <mat-card>
             <mat-card-content class="mx-1 px-1">
               <div class="row align-items-end">
@@ -42,7 +42,7 @@
                     color="accent"
                     mat-raised-button
                   >
-                    Force new solve
+                    New solve
                   </button>
                   <button
                     (click)="removeRoom(room.name, room.id)"
@@ -63,12 +63,21 @@
                           Best:
                           {{ solveService.bestUserSolve(user, room.solves).time | msToTime }}
                         </div>
+                        <div>Mo3: {{ mean[user]?.time }}</div>
                         <div *ngFor="let avg of averages[user]">Ao{{ avg.ao }}: {{ avg.time }}</div>
                         <div
                           [style.color]="currentUserName === user ? '#FF4081' : 'black'"
                           class="text-center"
                         >
                           {{ user }}
+                          <button
+                            *ngIf="isAdmin(room.administratorName) && user !== currentUserName"
+                            mat-button
+                            color="warn"
+                            (click)="kickUser(user)"
+                          >
+                            <mat-icon>cancel</mat-icon>
+                          </button>
                         </div>
                       </th>
                     </tr>
@@ -80,16 +89,27 @@
                         *ngFor="let user of room.connectedUserNames"
                         [style.color]="colorUserResult(user, solve)"
                       >
-                        <button
-                          (click)="solveService.openSolveInfo(solve.scramble, currentResult)"
+                        <div
                           *ngIf="
                             solveService.formatResult(getUserResult(solve, user)) as currentResult
                           "
-                          class="w-auto"
-                          mat-button
                         >
-                          {{ currentResult }}
-                        </button>
+                          <button
+                            (click)="solveService.openSolveInfo(solve.scramble, currentResult)"
+                            class="w-auto"
+                            mat-button
+                          >
+                            {{ currentResult }}
+                          </button>
+                          <button
+                            *ngIf="isAdmin(room.administratorName) || user === currentUserName"
+                            mat-icon-button
+                            color="warn"
+                            (click)="removeUserResult(user, solve.solveNumber)"
+                          >
+                            <mat-icon>cancel</mat-icon>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   </tbody>

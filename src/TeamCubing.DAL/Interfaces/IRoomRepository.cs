@@ -18,5 +18,9 @@ public interface IRoomRepository : ICrudRepository<Room>
 
     Task InsertNewSolvePatch(string roomName, Solve solve);
 
+    Task ReplaceSolvePatch(string roomName, int solveIndex, Solve solve);
+
+    Task RemoveSolvePatch(string roomName, int solveIndex);
+
     Task<bool> RemoveAsync(string roomName);
 }

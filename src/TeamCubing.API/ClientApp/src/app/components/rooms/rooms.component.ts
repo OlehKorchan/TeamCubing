@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Penalty, Solve, SolveResult } from '../../models/solve';
+import { Solve, SolveResult } from '../../models/solve';
 import { RoomService } from '../../services/room.service';
 import { Room } from '../../models/room';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -20,6 +20,7 @@ import { RoomPuzzle } from '../../models/roomSettings';
 import { JoinRoomDialogComponent } from './join-room-dialog/join-room-dialog.component';
 import { ChangePuzzleVerificationDialogComponent } from './change-puzzle-verification-dialog/change-puzzle-verification-dialog.component';
 import { DialogComponent } from '../dialog/dialog.component';
+import { ResultRemoveResponse } from '../../models/result-remove-response';
 
 @Component({
   selector: 'app-rooms',
@@ -32,16 +33,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public isLoaded: boolean = false;
   public isAuthorized: boolean = false;
   public isResultSent: boolean = false;
-
-  public availablePuzzles: RoomPuzzle[] = [
-    RoomPuzzle.ThreeByThreeCube,
-    RoomPuzzle.Megaminx,
-    RoomPuzzle.TwoByTwoCube,
-    RoomPuzzle.FourByFourCube,
-    RoomPuzzle.FiveByFiveCube,
-    RoomPuzzle.SixBySixCube,
-    RoomPuzzle.SevenBySevenCube,
-  ];
 
   public room: Room = {
     solves: [],
@@ -74,7 +65,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
   public mean: { [user: string]: { time: string } } = {};
   protected readonly not = not;
   private interval!: any;
-  private readonly emptyTime: string = '--:--';
   public averages: { [user: string]: { ao: number; time: string }[] } = {};
   public availableAverages: number[] = [5, 12, 50, 100];
   public newPuzzle: RoomPuzzle | undefined;
@@ -247,6 +237,50 @@ export class RoomsComponent implements OnInit, OnDestroy {
       });
   }
 
+  public kickUser(user: string): void {
+    this.dialog
+      .open(DialogComponent, {
+        data: {
+          title: 'Kick user',
+          text: 'Are you sure to kick user: ' + user + ' ?',
+        },
+        width: '300px',
+      })
+      .afterClosed()
+      .subscribe({
+        next: (res: boolean) => {
+          if (res) {
+            this.roomService.kickUser(user).subscribe();
+          }
+        },
+      });
+  }
+
+  public removeUserResult(user: string, solveNumber: number): void {
+    this.dialog
+      .open(DialogComponent, {
+        data: {
+          title: 'Delete user result',
+          text: 'Are you sure to delete "' + user + '" result in solve ' + solveNumber + ' ?',
+        },
+        width: '300px',
+      })
+      .afterClosed()
+      .subscribe({
+        next: (res: boolean) => {
+          if (res) {
+            this.roomService.removeUserResult(this.room.name, solveNumber, user).subscribe({
+              next: (res: boolean) => {
+                if (res) {
+                  console.log('User result deleted');
+                }
+              },
+            });
+          }
+        },
+      });
+  }
+
   public colorUserResultOld(user: string, solve: Solve): 'red' | 'green' | 'black' {
     const allUserResults = this.solveService.getNonDnfUserResultsSorted(
       this.room.solves,
@@ -317,7 +351,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
   private setupRoomConnection(room: Room): void {
     this.roomService
-      .startConnection()
+      .startConnection(room.name)
       .then(() => {
         this.roomService.joinRoom(room.name);
         this.isLoaded = true;
@@ -343,9 +377,27 @@ export class RoomsComponent implements OnInit, OnDestroy {
           }),
           this.roomService.leftUsers().subscribe({
             next: (userName: string): void => {
-              this.room.connectedUserNames = this.room.connectedUserNames.filter(
-                (u) => u !== userName,
-              );
+              if (userName === this.currentUserName) {
+                this.dialog
+                  .open(DialogComponent, {
+                    width: '300px',
+                    data: {
+                      title: 'You kicked from room "' + this.room.name + '"',
+                      text: 'Administrator kicked you from room, try connecting again or join another room',
+                      onlyOkButton: true,
+                    },
+                  })
+                  .afterClosed()
+                  .subscribe({
+                    next: () => {
+                      this.router.navigate(['/']);
+                    },
+                  });
+              } else {
+                this.room.connectedUserNames = this.room.connectedUserNames.filter(
+                  (u) => u !== userName,
+                );
+              }
             },
           }),
           this.roomService.results().subscribe({
@@ -389,6 +441,14 @@ export class RoomsComponent implements OnInit, OnDestroy {
                     this.router.navigate(['/']);
                   },
                 });
+            },
+          }),
+          this.roomService.resultRemoved().subscribe({
+            next: (response: ResultRemoveResponse) => {
+              const solve = this.room.solves.find((s) => s.solveNumber === response.solveNumber);
+              if (solve) {
+                solve.results = solve.results.filter((r) => r.userName !== response.userName);
+              }
             },
           }),
         );
@@ -448,6 +508,13 @@ export class RoomsComponent implements OnInit, OnDestroy {
     for (const user of this.room.connectedUserNames) {
       const mean = this.solveService.calculateMean(0, this.room.solves, user);
       if (mean as number) {
+        this.mean[user] = { time: toString.transform(mean) };
+      } else {
+        this.mean[user] = { time: 'n/a' };
+      }
+
+      const mo3 = this.solveService.calculateMean(3, this.room.solves, user);
+      if (mo3 as number) {
         this.mean[user] = { time: toString.transform(mean) };
       } else {
         this.mean[user] = { time: 'n/a' };
