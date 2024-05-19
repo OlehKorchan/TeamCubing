@@ -46,16 +46,16 @@ public static class TestFixture
         };
     }
 
-    public static Room GetRoomWithEmptySolve()
+    public static Room RoomWithEmptySolve()
     {
         var room = GetRoomWithUsers();
 
-        room.Solves.Add(GetBaseRoomSolve());
+        room.Solves.Add(BaseRoomSolve());
 
         return room;
     }
 
-    public static Room GetRoomWithFinishedSolve()
+    public static Room RoomWithFinishedSolve()
     {
         var roomWithUsers = GetRoomWithUsers();
 
@@ -77,7 +77,7 @@ public static class TestFixture
 
     public static Solve GetFinishedRoomSolve()
     {
-        var baseSolve = GetBaseRoomSolve();
+        var baseSolve = BaseRoomSolve();
         baseSolve.Results = new List<SolveResult>
         {
             new()
@@ -90,29 +90,22 @@ public static class TestFixture
         return baseSolve;
     }
 
-    public static Solve GetBaseRoomSolve()
+    public static Solve BaseRoomSolve()
     {
         return new Solve
         {
             Scramble = "R U R U L U L U",
-            ScrambledPuzzleImage = new PuzzleImage
-            {
-                Faces = new CubeFace[]
-                {
-                    new()
-                    {
-                        Colors = new[]
-                        {
-                            new[]
-                            {
-                                Color.White,
-                            },
-                        },
-                    },
-                },
-            },
             SolveNumber = 1,
             StartTime = DateTime.UtcNow,
+        };
+    }
+
+    public static ScrambleWithImage ScrambleWithImage()
+    {
+        return new ScrambleWithImage
+        {
+            Scramble = "R U R U L U L U",
+            Image = new PuzzleImage()
         };
     }
 

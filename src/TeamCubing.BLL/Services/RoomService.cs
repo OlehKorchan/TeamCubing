@@ -375,9 +375,11 @@ public class RoomService : IRoomService
 
     public async Task<string> LeaveLastRoomAsync(string userName = null)
     {
+        var currentUserName = _user.UserName();
+
         if (string.IsNullOrEmpty(userName))
         {
-            userName = _user.UserName();
+            userName = currentUserName;
         }
 
         var lastRoomName = (await _userRepository.ReadByNameAsync(userName)).LastRoomName;
@@ -389,7 +391,7 @@ public class RoomService : IRoomService
 
         var lastRoom = await _roomRepository.ReadByNameAsync(lastRoomName);
 
-        if (lastRoom.AdministratorName != _user.UserName())
+        if (currentUserName != userName && lastRoom.AdministratorName != currentUserName)
         {
             throw new UnauthorizedAccessException();
         }
@@ -547,7 +549,7 @@ public class RoomService : IRoomService
 
     private void AddScrambleImageToLastSolve(RoomResponse response)
     {
-        var lastSolve = response.Solves.MaxBy(s => s.SolveNumber);
+        var lastSolve = response.Solves?.MaxBy(s => s.SolveNumber);
 
         if (lastSolve is not null)
         {

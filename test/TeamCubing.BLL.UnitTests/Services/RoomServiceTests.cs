@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using AutoMapper;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TeamCubing.BLL.Interfaces;
@@ -19,6 +20,7 @@ public class RoomServiceTests
     private readonly Mock<IRoomRepository> _roomRepositoryMock = new();
     private readonly Mock<IUserRepository> _userRepositoryMock = new();
     private readonly Mock<IScramblerService> _scramblerMock = new();
+    private readonly Mock<IMapper> _mapperMock = new();
     private readonly RoomService _sut;
 
     public RoomServiceTests()
@@ -28,14 +30,15 @@ public class RoomServiceTests
             TestFixture.GetCurrentClaimsPrincipal(),
             _loggerMock.Object,
             _scramblerMock.Object,
-            _userRepositoryMock.Object);
+            _userRepositoryMock.Object,
+            _mapperMock.Object);
     }
 
     [Fact]
     public async Task CheckAccessAsync_UserOnceJoinedRoom_ShouldReturnAuthorizedResult()
     {
         // Arrange
-        var testRoom = TestFixture.GetRoomWithFinishedSolve();
+        var testRoom = TestFixture.RoomWithFinishedSolve();
         var expected = RoomCheckAccessResult.Authorized;
 
         _roomRepositoryMock
@@ -56,7 +59,7 @@ public class RoomServiceTests
     public async Task CheckAccessAsync_UserNeverJoinedRoom_ShouldReturnForbiddenResult()
     {
         // Arrange
-        var testRoom = TestFixture.GetRoomWithFinishedSolve();
+        var testRoom = TestFixture.RoomWithFinishedSolve();
         testRoom.WasOnceConnectedUserNames = new List<string>();
         testRoom.ConnectedUserNames = new List<string>();
 
@@ -156,9 +159,10 @@ public class RoomServiceTests
     public async Task PushSolveToRoomAsync_NotForceLastSolveFinished_ShouldCreateNewSolve()
     {
         // Arrange
-        var testRoom = TestFixture.GetRoomWithFinishedSolve();
-        var expectedSolve = TestFixture.GetBaseRoomSolve();
+        var testRoom = TestFixture.RoomWithFinishedSolve();
+        var expectedSolve = TestFixture.BaseRoomSolve();
         expectedSolve.SolveNumber++;
+        var generatedScramble = TestFixture.ScrambleWithImage;
 
         _roomRepositoryMock
             .Setup(m => m.ReadByIdAsync(testRoom.Id))
@@ -166,7 +170,7 @@ public class RoomServiceTests
 
         _scramblerMock
             .Setup(m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()))
-            .Returns((expectedSolve.Scramble, expectedSolve.ScrambledPuzzleImage));
+            .Returns(generatedScramble);
 
         // Act
         var actual = await _sut.PushSolveToRoomAsync(testRoom.Id, false);
@@ -184,7 +188,7 @@ public class RoomServiceTests
     public async Task PushSolveToRoomAsync_NotForceLastSolveNotFinished_ShouldReturnFalseResult()
     {
         // Arrange
-        var testRoom = TestFixture.GetRoomWithEmptySolve();
+        var testRoom = TestFixture.RoomWithEmptySolve();
 
         _roomRepositoryMock
             .Setup(m => m.ReadByIdAsync(testRoom.Id))
@@ -229,16 +233,17 @@ public class RoomServiceTests
     public async Task PushSolveToRoomAsync_ForceLastSolveNotFinished_ShouldCreateNewSolve()
     {
         // Arrange
-        var testRoom = TestFixture.GetRoomWithEmptySolve();
-        var expectedSolve = TestFixture.GetBaseRoomSolve();
+        var testRoom = TestFixture.RoomWithEmptySolve();
+        var expectedSolve = TestFixture.BaseRoomSolve();
         expectedSolve.SolveNumber++;
+        var generatedScramble = TestFixture.ScrambleWithImage();
 
         _roomRepositoryMock
             .Setup(m => m.ReadByIdAsync(testRoom.Id))
             .ReturnsAsync(testRoom);
         _scramblerMock
             .Setup(m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()))
-            .Returns((expectedSolve.Scramble, expectedSolve.ScrambledPuzzleImage));
+            .Returns(generatedScramble);
 
         // Act
         var actual = await _sut.PushSolveToRoomAsync(testRoom.Id, true);
@@ -317,7 +322,7 @@ public class RoomServiceTests
             .ReturnsAsync(roomWithUser);
 
         // Act
-        var previousRoomName = await _sut.LeaveLastRoomAsync(TODO);
+        var previousRoomName = await _sut.LeaveLastRoomAsync();
 
         // Assert
         previousRoomName.Should().BeEquivalentTo(roomWithUser.Name);
@@ -342,7 +347,7 @@ public class RoomServiceTests
             .ReturnsAsync(TestFixture.GetCurrentUser());
 
         // Act
-        var previousRoomName = await _sut.LeaveLastRoomAsync(TODO);
+        var previousRoomName = await _sut.LeaveLastRoomAsync();
 
         // Assert
         previousRoomName.Should().BeNullOrEmpty();
@@ -369,6 +374,7 @@ public class RoomServiceTests
             RoomName = roomToLogin.Name,
             RoomPassword = roomToLogin.Password,
         };
+        var roomResponse = MapToRoomResponse(roomToLogin);
 
         _roomRepositoryMock
             .Setup(
@@ -377,6 +383,9 @@ public class RoomServiceTests
         _userRepositoryMock
             .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
             .ReturnsAsync(TestFixture.GetCurrentUser());
+        _mapperMock
+            .Setup(m => m.Map<RoomResponse>(roomToLogin))
+            .Returns(roomResponse);
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -406,6 +415,7 @@ public class RoomServiceTests
             RoomName = roomToLogin.Name,
             RoomPassword = roomToLogin.Password,
         };
+        var roomResponse = MapToRoomResponse(roomToLogin);
 
         _roomRepositoryMock
             .Setup(
@@ -414,6 +424,9 @@ public class RoomServiceTests
         _userRepositoryMock
             .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
             .ReturnsAsync(TestFixture.GetCurrentUser());
+        _mapperMock
+            .Setup(m => m.Map<RoomResponse>(roomToLogin))
+            .Returns(roomResponse);
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -445,6 +458,7 @@ public class RoomServiceTests
             RoomName = roomToLogin.Name,
             RoomPassword = string.Empty,
         };
+        var roomResponse = MapToRoomResponse(roomToLogin);
 
         _roomRepositoryMock
             .Setup(
@@ -453,6 +467,9 @@ public class RoomServiceTests
         _userRepositoryMock
             .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
             .ReturnsAsync(TestFixture.GetCurrentUser());
+        _mapperMock
+            .Setup(m => m.Map<RoomResponse>(roomToLogin))
+            .Returns(roomResponse);
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -513,7 +530,7 @@ public class RoomServiceTests
     public async Task AddUserResultAsync_ValidResult_ShouldAddResultToSolve()
     {
         // Arrange
-        var testRoom = TestFixture.GetRoomWithEmptySolve();
+        var testRoom = TestFixture.RoomWithEmptySolve();
         var solveId = testRoom.Solves.First().SolveNumber;
         var request = new NewUserResultRequest
         {
@@ -543,5 +560,26 @@ public class RoomServiceTests
             m =>
                 m.ReadByIdAsync(It.Is<string>(i => i == testRoom.Id)),
             Times.Once);
+    }
+
+    private static RoomResponse MapToRoomResponse(Room roomToLogin)
+    {
+        return new RoomResponse
+        {
+            Solves = roomToLogin.Solves
+                .Select(s => new SolveResponse
+                {
+                    SolveNumber = s.SolveNumber,
+                    Scramble = s.Scramble,
+                    Results = s.Results
+                })
+                .ToList(),
+            Name = roomToLogin.Name,
+            Settings = roomToLogin.Settings,
+            WasOnceConnectedUserNames = roomToLogin.WasOnceConnectedUserNames,
+            AdministratorName = roomToLogin.AdministratorName,
+            Id = roomToLogin.Id,
+            ConnectedUserNames = roomToLogin.ConnectedUserNames
+        };
     }
 }
