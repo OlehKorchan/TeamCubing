@@ -20,8 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.ConfigureLogging(cfg => cfg.ClearProviders())
     .UseSerilog(
         (_, lc) => lc
-            .WriteTo.Console()
-            .WriteTo.Seq("https://teamcubing-logs.azurewebsites.net"));
+            .WriteTo.Console());
 
 builder.Services.AddCors(
     options =>
