@@ -1,3 +1,6 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
 name: Build and deploy ASP.Net Core app to Azure Web App - team-cubing
 
 on:
@@ -9,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -16,21 +21,13 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '6.0'
 
-      - name: Build only src projects
-        run: |
-          dotnet build ./src/TeamCubing.API/TeamCubing.API.csproj -c Release
-          dotnet build ./src/TeamCubing.BLL/TeamCubing.BLL.csproj -c Release
-          dotnet build ./src/TeamCubing.DAL/TeamCubing.DAL.csproj -c Release
-          dotnet build ./src/TeamCubing.Domain/TeamCubing.Domain.csproj -c Release
-          dotnet build ./src/WcaScrambler/WcaScrambler.csproj -c Release
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
 
-      - name: Run unit tests
-        run: dotnet test ./test/TeamCubing.BLL.UnitTests/TeamCubing.BLL.UnitTests.csproj -c Release
-
-      - name: dotnet publish API
-        run: dotnet publish ./src/TeamCubing.API/TeamCubing.API.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: dotnet publish
+        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -45,21 +42,21 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write
-      contents: read 
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.__clientidsecretname__ }}
-          tenant-id: ${{ secrets.__tenantidsecretname__ }}
-          subscription-id: ${{ secrets.__subscriptionidsecretname__ }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_396EE6317B794084AD127275964456B2 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_20B688FE706D456BA46268B5922AF7B7 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C96C1C294C79454EAEEBDDC52AB55794 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -68,3 +65,4 @@ jobs:
           app-name: 'team-cubing'
           slot-name: 'Production'
           package: .
+          
