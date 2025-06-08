@@ -19,6 +19,7 @@ jobs:
           dotnet-version: '6.0.x'
 
       - name: Restore NuGet packages
+
         run: dotnet restore ./src
 
       - name: Build only src projects
@@ -69,6 +70,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+      
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_565FDCEE6C8C42BC93234852EEBD325E }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5DA63BBDA90A40F793612E9431E0EF85 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EBB579D86EE1445B92B360CDFBE5C9E2 }}
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -83,4 +91,5 @@ jobs:
         with:
           app-name: 'team-cubing'
           slot-name: 'Production'
+
           package: .

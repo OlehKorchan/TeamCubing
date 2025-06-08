@@ -22,24 +22,24 @@ public class RoomService : IRoomService
     private readonly ILogger<RoomService> _logger;
     private readonly IRoomRepository _roomRepository;
     private readonly IScramblerService _scramblerService;
-    private readonly ClaimsPrincipal _user;
+    private readonly UserContext _user;
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
 
     public RoomService(
         IRoomRepository roomRepository,
-        ClaimsPrincipal user,
         ILogger<RoomService> logger,
         IScramblerService scramblerService,
         IUserRepository userRepository,
-        IMapper mapper)
+        IMapper mapper,
+        UserContext user)
     {
         _roomRepository = roomRepository;
-        _user = user;
         _logger = logger;
         _scramblerService = scramblerService;
         _userRepository = userRepository;
         _mapper = mapper;
+        _user = user;
     }
 
     public async Task<RoomCheckAccessResult> CheckAccessAsync(string roomName)
@@ -52,8 +52,8 @@ public class RoomService : IRoomService
         }
 
         return room.Settings.IsOpen ||
-               room.ConnectedUserNames.Contains(_user.UserName()) ||
-               room.WasOnceConnectedUserNames.Contains(_user.UserName())
+               room.ConnectedUserNames.Contains(_user.UserName) ||
+               room.WasOnceConnectedUserNames.Contains(_user.UserName)
             ? RoomCheckAccessResult.Authorized
             : RoomCheckAccessResult.Forbidden;
     }
@@ -101,9 +101,9 @@ public class RoomService : IRoomService
                 Settings = request.Settings,
                 WasOnceConnectedUserNames = new List<string>
                 {
-                    _user.UserName(),
+                    _user.UserName,
                 },
-                AdministratorName = _user.UserName(),
+                AdministratorName = _user.UserName,
             });
 
         _logger.LogInformation("Room Created: {SerializedResult}", room.ToJsonString());
@@ -198,7 +198,7 @@ public class RoomService : IRoomService
             return response;
         }
 
-        if (room.AdministratorName == _user.UserName() || request.UserName == _user.UserName())
+        if (room.AdministratorName == _user.UserName || request.UserName == _user.UserName)
         {
             var solveToUpdate = room.Solves.FirstOrDefault(s => s.SolveNumber == request.SolveNumber);
 
@@ -237,7 +237,7 @@ public class RoomService : IRoomService
             return response;
         }
 
-        if (room.AdministratorName == _user.UserName())
+        if (room.AdministratorName == _user.UserName)
         {
             var solveToRemove = room.Solves.FirstOrDefault(s => s.SolveNumber == request.SolveNumber);
 
@@ -296,19 +296,19 @@ public class RoomService : IRoomService
 
         if (isAdminEmpty || isEmptyRoom)
         {
-            room.AdministratorName = _user.UserName();
+            room.AdministratorName = _user.UserName;
         }
 
         if (isUserNeverJoined)
         {
-            room.WasOnceConnectedUserNames.Add(_user.UserName());
+            room.WasOnceConnectedUserNames.Add(_user.UserName);
         }
 
-        var isUserNotInRoom = room.ConnectedUserNames.All(u => u != _user.UserName());
+        var isUserNotInRoom = room.ConnectedUserNames.All(u => u != _user.UserName);
 
         if (isUserNotInRoom)
         {
-            room.ConnectedUserNames.Add(_user.UserName());
+            room.ConnectedUserNames.Add(_user.UserName);
         }
 
         var roomUpdate = _roomRepository.ReplaceAsync(room);
@@ -337,7 +337,7 @@ public class RoomService : IRoomService
             {
                 var newResult = new SolveResult
                 {
-                    UserName = _user.UserName(),
+                    UserName = _user.UserName,
                     Time = request.TimeInMilliseconds,
                     Penalty = request.Penalty,
                 };
@@ -356,7 +356,7 @@ public class RoomService : IRoomService
                         Time = request.TimeInMilliseconds,
                         DateAdded = DateTime.Now,
                     },
-                    _user.UserName());
+                    _user.UserName);
 
                 await Task.WhenAll(roomUpdate, userUpdate);
 
@@ -375,7 +375,7 @@ public class RoomService : IRoomService
 
     public async Task<string> LeaveLastRoomAsync(string userName = null)
     {
-        var currentUserName = _user.UserName();
+        var currentUserName = _user.UserName;
 
         if (string.IsNullOrEmpty(userName))
         {
@@ -453,7 +453,7 @@ public class RoomService : IRoomService
         string providedPassword,
         out bool isUserNeverJoined)
     {
-        isUserNeverJoined = room.WasOnceConnectedUserNames.All(u => u != _user.UserName());
+        isUserNeverJoined = room.WasOnceConnectedUserNames.All(u => u != _user.UserName);
 
         if ((!room.Settings.IsOpen && isUserNeverJoined && room.Password != providedPassword) ||
             room.ConnectedUserNames.Count >= room.Settings.UsersLimit)
@@ -476,17 +476,17 @@ public class RoomService : IRoomService
 
     private bool IsFirstUserResult(Solve solve)
     {
-        return solve.Results.All(r => r.UserName != _user.UserName());
+        return solve.Results.All(r => r.UserName != _user.UserName);
     }
 
     private bool IsUserInRoom(Room room)
     {
-        return room.ConnectedUserNames.Any(r => r == _user.UserName());
+        return room.ConnectedUserNames.Any(r => r == _user.UserName);
     }
 
     private async Task UpdateUserLastRoomAsync(string roomName)
     {
-        var user = await _userRepository.ReadByNameAsync(_user.UserName());
+        var user = await _userRepository.ReadByNameAsync(_user.UserName);
 
         user.LastRoomName = roomName;
 
