@@ -8,14 +8,18 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using TeamCubing.API.Hubs;
+using TeamCubing.API.Middleware;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.BLL.Services;
 using TeamCubing.DAL.Interfaces;
 using TeamCubing.DAL.Repositories;
+using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.MappingProfiles;
 using TeamCubing.Domain.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplicationInsightsTelemetry();
 
 builder.Host.ConfigureLogging(cfg => cfg.ClearProviders())
     .UseSerilog(
@@ -145,14 +149,7 @@ void AddAuthAndUserAccessor()
             }
         );
 
-    builder.Services.AddHttpContextAccessor();
-    builder.Services.AddTransient(
-        services =>
-        {
-            var httpContextAccessor = services.GetService<IHttpContextAccessor>();
-
-            return httpContextAccessor?.HttpContext?.User;
-        });
+    builder.Services.AddScoped<UserContext>();
 }
 
 void ConfigureServices()
@@ -187,6 +184,7 @@ void ConfigureMiddleware()
     app.UseRouting();
 
     app.UseAuthorization();
+    app.UseMiddleware<CustomAuthMiddleware>();
 
     app.MapControllers();
     app.MapHub<RoomHub>("/api/hubs/room");
