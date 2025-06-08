@@ -1,12 +1,11 @@
-﻿using System.Security.Claims;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TeamCubing.BLL.Helpers.Extensions;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.DAL.Interfaces;
-using TeamCubing.Domain.Extensions;
+using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
@@ -20,19 +19,17 @@ public class AccountService : IAccountService
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AccountService> _logger;
     private readonly IUserRepository _userRepository;
-    private readonly ClaimsPrincipal _user;
+    private readonly UserContext _user;
 
     public AccountService(
         IJwtGenerator jwtGenerator,
         ILogger<AccountService> logger,
         IOptions<Settings> settings,
-        IUserRepository userRepository,
-        ClaimsPrincipal user)
+        IUserRepository userRepository)
     {
         _jwtGenerator = jwtGenerator;
         _logger = logger;
         _userRepository = userRepository;
-        _user = user;
         _jwtSettings = settings.Value.JwtSettings;
     }
 
@@ -113,7 +110,7 @@ public class AccountService : IAccountService
 
     public async Task<UserStatisticsResponse> GetUserStatistics()
     {
-        var user = await _userRepository.ReadByNameAsync(_user.UserName());
+        var user = await _userRepository.ReadByNameAsync(_user.UserName);
 
         var allResultsByPuzzle = user.Solves.GroupBy(s => s.Puzzle);
 
