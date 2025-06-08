@@ -119,16 +119,11 @@ public static class TestFixture
         };
     }
 
-    public static ClaimsPrincipal GetCurrentClaimsPrincipal()
+    public static UserContext GetUserContext()
     {
-        return new ClaimsPrincipal(
-            new[]
-            {
-                new ClaimsIdentity(
-                    new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, CurrentUserName),
-                    }),
-            });
+        return new UserContext
+        {
+            UserName = CurrentUserName
+        };
     }
 }

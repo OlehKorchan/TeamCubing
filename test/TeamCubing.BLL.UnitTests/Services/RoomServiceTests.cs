@@ -27,14 +27,14 @@ public class RoomServiceTests
     {
         _sut = new RoomService(
             _roomRepositoryMock.Object,
-            TestFixture.GetCurrentClaimsPrincipal(),
             _loggerMock.Object,
             _scramblerMock.Object,
             _userRepositoryMock.Object,
             new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile(new GeneralProfile());
-            }).CreateMapper());
+            }).CreateMapper(),
+            TestFixture.GetUserContext());
     }
 
     [Fact]
