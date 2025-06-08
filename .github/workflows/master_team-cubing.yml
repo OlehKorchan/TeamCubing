@@ -20,11 +20,11 @@ jobs:
 
       - name: Build only src projects
         run: |
-          dotnet build ./src/TeamCubing.API/TeamCubing.API.csproj -c Release --no-restore
-          dotnet build ./src/TeamCubing.BLL/TeamCubing.BLL.csproj -c Release --no-restore
-          dotnet build ./src/TeamCubing.DAL/TeamCubing.DAL.csproj -c Release --no-restore
-          dotnet build ./src/TeamCubing.Domain/TeamCubing.Domain.csproj -c Release --no-restore
-          dotnet build ./src/WcaScrambler/WcaScrambler.csproj -c Release --no-restore
+          dotnet build ./src/TeamCubing.API/TeamCubing.API.csproj -c Release
+          dotnet build ./src/TeamCubing.BLL/TeamCubing.BLL.csproj -c Release
+          dotnet build ./src/TeamCubing.DAL/TeamCubing.DAL.csproj -c Release
+          dotnet build ./src/TeamCubing.Domain/TeamCubing.Domain.csproj -c Release
+          dotnet build ./src/WcaScrambler/WcaScrambler.csproj -c Release
 
       - name: Run unit tests
         run: dotnet test ./test/TeamCubing.BLL.UnitTests/TeamCubing.BLL.UnitTests.csproj -c Release --no-build
