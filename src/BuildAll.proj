@@ -1,0 +1,12 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <Projects Include="TeamCubing.API/TeamCubing.API.csproj" />
+        <Projects Include="TeamCubing.BLL/TeamCubing.BLL.csproj" />
+        <Projects Include="TeamCubing.DAL/TeamCubing.DAL.csproj" />
+        <Projects Include="TeamCubing.Domain/TeamCubing.Domain.csproj" />
+    </ItemGroup>
+
+    <Target Name="BuildProjects">
+        <MSBuild Projects="@(Projects)" Targets="Build" />
+    </Target>
+</Project>
