@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy ASP.Net Core app to Azure Web App - team-cubing
 
 on:
@@ -14,25 +11,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up .NET Core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
-          include-prerelease: true
 
-      - name: Build with dotnet
+      - name: Restore NuGet packages
+        run: dotnet restore ./src
+
+      - name: Build only src projects
         run: |
-          cd src/TeamCubing.API
-          dotnet build --configuration Release
-          dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+          dotnet build ./src/TeamCubing.API/TeamCubing.API.csproj -c Release --no-restore
+          dotnet build ./src/TeamCubing.BLL/TeamCubing.BLL.csproj -c Release --no-restore
+          dotnet build ./src/TeamCubing.DAL/TeamCubing.DAL.csproj -c Release --no-restore
+          dotnet build ./src/TeamCubing.Domain/TeamCubing.Domain.csproj -c Release --no-restore
+          dotnet build ./src/WcaScrambler/WcaScrambler.csproj -c Release --no-restore
+
+      - name: dotnet publish API
+        run: dotnet publish ./src/TeamCubing.API/TeamCubing.API.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp --no-restore
 
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: .net-app
           path: ${{env.DOTNET_ROOT}}/myapp
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore NuGet packages
+        run: dotnet restore ./test
+
+      - name: Run unit tests
+        run: dotnet test ./test/TeamCubing.BLL.UnitTests/TeamCubing.BLL.UnitTests.csproj -c Release --no-build
 
   deploy:
     runs-on: ubuntu-latest
@@ -40,12 +61,21 @@ jobs:
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
 
     steps:
       - name: Download artifact from build job
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: .net-app
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_565FDCEE6C8C42BC93234852EEBD325E }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5DA63BBDA90A40F793612E9431E0EF85 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EBB579D86EE1445B92B360CDFBE5C9E2 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -53,5 +83,4 @@ jobs:
         with:
           app-name: 'team-cubing'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_571DE9E34BD74BDDBF12164BBDB49FBB }}
           package: .

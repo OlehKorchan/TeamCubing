@@ -7,6 +7,7 @@ using TeamCubing.BLL.Services;
 using TeamCubing.BLL.Tests.Helpers;
 using TeamCubing.DAL.Interfaces;
 using TeamCubing.Domain.DTO;
+using TeamCubing.Domain.MappingProfiles;
 using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
@@ -20,7 +21,6 @@ public class RoomServiceTests
     private readonly Mock<IRoomRepository> _roomRepositoryMock = new();
     private readonly Mock<IUserRepository> _userRepositoryMock = new();
     private readonly Mock<IScramblerService> _scramblerMock = new();
-    private readonly Mock<IMapper> _mapperMock = new();
     private readonly RoomService _sut;
 
     public RoomServiceTests()
@@ -31,7 +31,10 @@ public class RoomServiceTests
             _loggerMock.Object,
             _scramblerMock.Object,
             _userRepositoryMock.Object,
-            _mapperMock.Object);
+            new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile(new GeneralProfile());
+            }).CreateMapper());
     }
 
     [Fact]
@@ -383,9 +386,6 @@ public class RoomServiceTests
         _userRepositoryMock
             .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
             .ReturnsAsync(TestFixture.GetCurrentUser());
-        _mapperMock
-            .Setup(m => m.Map<RoomResponse>(roomToLogin))
-            .Returns(roomResponse);
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -424,9 +424,6 @@ public class RoomServiceTests
         _userRepositoryMock
             .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
             .ReturnsAsync(TestFixture.GetCurrentUser());
-        _mapperMock
-            .Setup(m => m.Map<RoomResponse>(roomToLogin))
-            .Returns(roomResponse);
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -445,7 +442,7 @@ public class RoomServiceTests
                 It.Is<Room>(
                     r => r.Name == roomToLogin.Name &&
                          r.WasOnceConnectedUserNames.Contains(TestFixture.CurrentUserName))),
-            Times.Never);
+            Times.Once);
     }
 
     [Fact]
@@ -467,9 +464,6 @@ public class RoomServiceTests
         _userRepositoryMock
             .Setup(m => m.ReadByNameAsync(TestFixture.CurrentUserName))
             .ReturnsAsync(TestFixture.GetCurrentUser());
-        _mapperMock
-            .Setup(m => m.Map<RoomResponse>(roomToLogin))
-            .Returns(roomResponse);
 
         // Act
         var result = await _sut.LoginToRoomAsync(loginRequest);
@@ -488,7 +482,7 @@ public class RoomServiceTests
                 It.Is<Room>(
                     r => r.Name == roomToLogin.Name &&
                          r.WasOnceConnectedUserNames.Contains(TestFixture.CurrentUserName))),
-            Times.Never);
+            Times.Once);
     }
 
     [Fact]
