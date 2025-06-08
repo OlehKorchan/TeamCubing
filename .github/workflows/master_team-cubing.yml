@@ -46,6 +46,7 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
       id-token: write
+      contents: read 
 
     steps:
       - name: Download artifact from build job
@@ -54,15 +55,15 @@ jobs:
           name: .net-app
 
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_565FDCEE6C8C42BC93234852EEBD325E }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5DA63BBDA90A40F793612E9431E0EF85 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EBB579D86EE1445B92B360CDFBE5C9E2 }}
+          client-id: ${{ secrets.__clientidsecretname__ }}
+          tenant-id: ${{ secrets.__tenantidsecretname__ }}
+          subscription-id: ${{ secrets.__subscriptionidsecretname__ }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: 'team-cubing'
           slot-name: 'Production'
