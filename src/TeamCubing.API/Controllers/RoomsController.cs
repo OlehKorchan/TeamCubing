@@ -24,8 +24,13 @@ public class RoomsController : ControllerBase
         _roomHub = roomHub;
     }
 
+    /// <summary>
+    /// Returns all existing rooms
+    /// </summary>
+    /// <returns>List of all existing rooms</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAllAsync()
+    [ProducesResponseType<List<RoomDisplayDataResponse>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<RoomDisplayDataResponse>>> GetAllAsync()
     {
         return Ok(await _roomService.GetAllRoomsDataAsync());
     }
