@@ -149,7 +149,7 @@ void AddAuthAndUserAccessor()
             }
         );
 
-    builder.Services.AddScoped<UserContext>();
+    builder.Services.AddSingleton<UserContext>();
 }
 
 void ConfigureServices()
@@ -157,9 +157,9 @@ void ConfigureServices()
     builder.Services.AddSingleton<IRoomRepository, RoomRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IAccountService, AccountService>();
-    builder.Services.AddTransient<IJwtGenerator, JwtGenerator>();
-    builder.Services.AddTransient<IRoomService, RoomService>();
-    builder.Services.AddTransient<IScramblerService, ScramblerService>();
+    builder.Services.AddScoped<IJwtGenerator, JwtGenerator>();
+    builder.Services.AddScoped<IRoomService, RoomService>();
+    builder.Services.AddScoped<IScramblerService, ScramblerService>();
 }
 
 void ConfigureMiddleware()
