@@ -1,8 +1,7 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using TeamCubing.BLL.Interfaces;
-using TeamCubing.Domain.Extensions;
+using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
 
@@ -13,10 +12,10 @@ public class RoomHub : Hub
 {
     private readonly ILogger<RoomHub> _logger;
     private readonly IRoomService _roomService;
-    private readonly ClaimsPrincipal _user;
+    private readonly UserContext _user;
 
     public RoomHub(
-        ClaimsPrincipal user,
+        UserContext user,
         IRoomService roomService,
         ILogger<RoomHub> logger)
     {
@@ -40,11 +39,11 @@ public class RoomHub : Hub
     public async Task JoinGroup(string roomName)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
-        await Clients.Group(roomName).SendAsync("NewUser", _user.UserName());
+        await Clients.Group(roomName).SendAsync("NewUser", _user.UserName);
 
         _logger.LogInformation(
             "User {UserName} joined room {RoomName}",
-            _user.UserName(),
+            _user.UserName,
             roomName);
     }
 
@@ -63,7 +62,7 @@ public class RoomHub : Hub
         }
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
-        await Clients.Group(roomName).SendAsync("UserLeft", _user.UserName());
+        await Clients.Group(roomName).SendAsync("UserLeft", _user.UserName);
     }
 
     public async Task AskForNewSolve(string roomId)
@@ -97,7 +96,7 @@ public class RoomHub : Hub
 
         if (!string.IsNullOrEmpty(room))
         {
-            await Clients.Group(room).SendAsync("UserLeft", _user.UserName());
+            await Clients.Group(room).SendAsync("UserLeft", _user.UserName);
         }
 
         await base.OnDisconnectedAsync(exception);

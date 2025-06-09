@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using TeamCubing.Domain.DTO;
 
 namespace TeamCubing.API.Middleware;
@@ -23,7 +23,7 @@ public class CustomAuthMiddleware
     {
         if (context.User.Identity?.IsAuthenticated ?? false)
         {
-            var userName = context.User.FindFirst(JwtRegisteredClaimNames.NameId)?.Value;
+            var userName = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             _userContext.UserName = userName;
         }
