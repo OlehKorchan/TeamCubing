@@ -1,6 +1,8 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
@@ -17,14 +19,20 @@ using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.MappingProfiles;
 using TeamCubing.Domain.Settings;
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .WriteTo.ApplicationInsights(
+        TelemetryConfiguration.CreateDefault(),
+        TelemetryConverter.Traces)
+    .WriteTo.Console()
+    .CreateLogger();
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplicationInsightsTelemetry();
+builder.Host.UseSerilog();
 
-builder.Host.ConfigureLogging(cfg => cfg.ClearProviders())
-    .UseSerilog(
-        (_, lc) => lc
-            .WriteTo.Console());
+builder.Services.AddApplicationInsightsTelemetry();
 
 builder.Services.AddCors(
     options =>
@@ -71,6 +79,10 @@ void AddSwagger()
     builder.Services.AddSwaggerGen(
         options =>
         {
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            options.IncludeXmlComments(xmlPath);
+
             options.AddSecurityDefinition(
                 "Bearer",
                 new OpenApiSecurityScheme

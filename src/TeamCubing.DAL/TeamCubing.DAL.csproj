@@ -1,18 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AspNetCore.Identity.CosmosDb" Version="2.1.4" />
         <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.18" />
-        <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.34.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="6.0.18" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.18" />
-        <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="6.0.18" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.16" />
+        <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.51.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="8.0.16" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.16" />
     </ItemGroup>
 
     <ItemGroup>
