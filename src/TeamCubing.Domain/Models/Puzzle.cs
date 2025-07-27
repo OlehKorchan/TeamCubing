@@ -1,6 +1,6 @@
 ﻿namespace TeamCubing.Domain.Models;
 
-public enum RoomPuzzle
+public enum Puzzle
 {
     ThreeByThreeCube = 3,
     TwoByTwoCube = 2,

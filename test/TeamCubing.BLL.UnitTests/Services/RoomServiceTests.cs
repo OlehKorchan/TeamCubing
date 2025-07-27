@@ -172,7 +172,7 @@ public class RoomServiceTests
             .ReturnsAsync(testRoom);
 
         _scramblerMock
-            .Setup(m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()))
+            .Setup(m => m.GenerateScrambleWithImage(It.IsAny<Puzzle>()))
             .Returns(generatedScramble);
 
         // Act
@@ -180,7 +180,7 @@ public class RoomServiceTests
 
         // Assert
         _roomRepositoryMock.Verify(m => m.ReadByIdAsync(testRoom.Id), Times.Once);
-        _scramblerMock.Verify(m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()), Times.Once);
+        _scramblerMock.Verify(m => m.GenerateScrambleWithImage(It.IsAny<Puzzle>()), Times.Once);
         actual.IsSuccess.Should().BeTrue();
         actual.RoomName.Should().BeEquivalentTo(testRoom.Name);
         actual.Model.Scramble.Should().BeEquivalentTo(expectedSolve.Scramble);
@@ -202,7 +202,7 @@ public class RoomServiceTests
         // Assert
         _roomRepositoryMock.Verify(m => m.ReadByIdAsync(testRoom.Id), Times.Once);
         _scramblerMock.Verify(
-            m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()),
+            m => m.GenerateScrambleWithImage(It.IsAny<Puzzle>()),
             Times.Never);
         actual.IsSuccess.Should().BeFalse();
         actual.RoomName.Should().BeEquivalentTo(testRoom.Name);
@@ -225,7 +225,7 @@ public class RoomServiceTests
             m => m.ReadByIdAsync(It.IsAny<string>()),
             Times.Once);
         _scramblerMock.Verify(
-            m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()),
+            m => m.GenerateScrambleWithImage(It.IsAny<Puzzle>()),
             Times.Never);
         actual.IsSuccess.Should().BeFalse();
         actual.RoomName.Should().BeNullOrEmpty();
@@ -245,7 +245,7 @@ public class RoomServiceTests
             .Setup(m => m.ReadByIdAsync(testRoom.Id))
             .ReturnsAsync(testRoom);
         _scramblerMock
-            .Setup(m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()))
+            .Setup(m => m.GenerateScrambleWithImage(It.IsAny<Puzzle>()))
             .Returns(generatedScramble);
 
         // Act
@@ -253,7 +253,7 @@ public class RoomServiceTests
 
         // Assert
         _roomRepositoryMock.Verify(m => m.ReadByIdAsync(testRoom.Id), Times.Once);
-        _scramblerMock.Verify(m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()), Times.Once);
+        _scramblerMock.Verify(m => m.GenerateScrambleWithImage(It.IsAny<Puzzle>()), Times.Once);
         actual.IsSuccess.Should().BeTrue();
         actual.RoomName.Should().BeEquivalentTo(testRoom.Name);
         actual.Model.Scramble.Should().BeEquivalentTo(expectedSolve.Scramble);
@@ -276,7 +276,7 @@ public class RoomServiceTests
             m => m.ReadByIdAsync(It.IsAny<string>()),
             Times.Once);
         _scramblerMock.Verify(
-            m => m.GenerateScrambleWithImage(It.IsAny<RoomPuzzle>()),
+            m => m.GenerateScrambleWithImage(It.IsAny<Puzzle>()),
             Times.Never);
         actual.IsSuccess.Should().BeFalse();
         actual.RoomName.Should().BeNullOrEmpty();

@@ -353,7 +353,7 @@ public class RoomService : IRoomService
                         Puzzle = room.Settings.Puzzle,
                         Penalty = request.Penalty,
                         Scramble = roomSolve.Scramble,
-                        Time = request.TimeInMilliseconds,
+                        TimeMilliseconds = request.TimeInMilliseconds,
                         DateAdded = DateTime.Now,
                     },
                     _user.UserName);
@@ -496,7 +496,7 @@ public class RoomService : IRoomService
     private ScrambleWithImage GetScrambleFromCacheOrGenerate(Room room)
     {
         var puzzleType = room.Settings.Puzzle;
-        if (puzzleType is RoomPuzzle.TwoByTwoCube or RoomPuzzle.ThreeByThreeCube)
+        if (puzzleType is Puzzle.TwoByTwoCube or Puzzle.ThreeByThreeCube)
         {
             return _scramblerService.GenerateScrambleWithImage(puzzleType);
         }

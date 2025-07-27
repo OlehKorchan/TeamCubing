@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using TeamCubing.API.Hubs;
 using TeamCubing.BLL.Interfaces;
 using TeamCubing.Domain.DTO;
+using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
 
@@ -30,13 +31,13 @@ public class RoomsController : ControllerBase
     /// <returns>List of all existing rooms</returns>
     [HttpGet]
     [ProducesResponseType<List<RoomDisplayDataResponse>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<RoomDisplayDataResponse>>> GetAllAsync()
+    public async Task<ActionResult<List<RoomDisplayDataResponse>>> GetAllRooms()
     {
         return Ok(await _roomService.GetAllRoomsDataAsync());
     }
 
     [HttpGet("kick/{userName}")]
-    public async Task<IActionResult> LeaveRoomAsync(string userName)
+    public async Task<IActionResult> LeaveRoom(string userName)
     {
         var leftRoomName = await _roomService.LeaveLastRoomAsync(userName);
 
@@ -52,7 +53,11 @@ public class RoomsController : ControllerBase
     }
 
     [HttpGet("checkAccess/{roomName}")]
-    public async Task<IActionResult> CheckAccessAsync(string roomName)
+    [ProducesResponseType<bool>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<bool>> CheckAccess(string roomName)
     {
         var result = await _roomService.CheckAccessAsync(roomName);
         return result switch
@@ -60,12 +65,13 @@ public class RoomsController : ControllerBase
             RoomCheckAccessResult.Authorized => Ok(true),
             RoomCheckAccessResult.Forbidden => Ok(false),
             RoomCheckAccessResult.NotFound => NotFound(),
-            _ => throw new ArgumentOutOfRangeException(),
+            _ => BadRequest()
         };
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAsync([FromBody] RoomCreateRequest request)
+    [ProducesResponseType<ModelResponse<Room>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<ModelResponse<Room>>> CreateRoom([FromBody] RoomCreateRequest request)
     {
         var result = await _roomService.CreateRoomAsync(request);
 
@@ -73,7 +79,8 @@ public class RoomsController : ControllerBase
     }
 
     [HttpDelete("{roomId}")]
-    public async Task<IActionResult> DeleteAsync(string roomId)
+    [ProducesResponseType<bool>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<RoomOperationResponse<Room>>> DeleteRoom(string roomId)
     {
         var result = await _roomService.RemoveRoomAsync(roomId);
 
@@ -88,7 +95,8 @@ public class RoomsController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> LoginToRoomAsync(RoomLoginRequest request)
+    [ProducesResponseType<RoomLoginResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<RoomLoginResponse>> LoginToRoom(RoomLoginRequest request)
     {
         var result = await _roomService.LoginToRoomAsync(request);
 

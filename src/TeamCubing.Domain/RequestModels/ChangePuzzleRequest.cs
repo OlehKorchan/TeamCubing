@@ -6,5 +6,5 @@ public class ChangePuzzleRequest
 {
     public string RoomName { get; set; }
 
-    public RoomPuzzle Puzzle { get; set; }
+    public Puzzle Puzzle { get; set; }
 }
