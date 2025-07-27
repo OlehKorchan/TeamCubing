@@ -8,7 +8,7 @@ public class RoomDisplayDataResponse
 
     public string RoomName { get; set; }
 
-    public RoomPuzzle Puzzle { get; set; }
+    public Puzzle Puzzle { get; set; }
 
     public string AdministratorName { get; set; }
 

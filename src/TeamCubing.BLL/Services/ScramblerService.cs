@@ -3,34 +3,35 @@ using TeamCubing.Domain.DTO;
 using TeamCubing.Domain.Models;
 using WcaScrambler.Puzzles;
 using WcaScrambler.Utils;
+using Puzzle = TeamCubing.Domain.Models.Puzzle;
 
 namespace TeamCubing.BLL.Services;
 
 public class ScramblerService : IScramblerService
 {
-    private readonly Dictionary<RoomPuzzle, string[]> _puzzleBldMoves = new()
+    private readonly Dictionary<Puzzle, string[]> _puzzleBldMoves = new()
     {
         {
-            RoomPuzzle.ThreeByThreeBld, new[]
+            Puzzle.ThreeByThreeBld, new[]
             {
                 " Rw", " Uw", " Lw", " Rw'", " Uw'", " Lw'", " Dw", " Dw'", " Fw'", " Fw", " Rw2", " Uw2", " Lw2", " Rw2'", " Uw2'", " Lw2'", " Dw2", " Dw2'", " Fw2'", " Fw2"
             }
         },
         {
-            RoomPuzzle.FourByFourBld, new[]
+            Puzzle.FourByFourBld, new[]
             {
                 " x", " x'", " y", " y'", " z'", " z"
             }
         },
         {
-            RoomPuzzle.FiveByFiveBld, new[]
+            Puzzle.FiveByFiveBld, new[]
             {
                 " 3Rw", " 3Uw", " 3Lw", " 3Rw'", " 3Uw'", " 3Lw'", " 3Dw", " 3Dw'", " 3Fw'", " 3Fw"
             }
         },
     };
 
-    public string GenerateScramble(RoomPuzzle puzzle)
+    public string GenerateScramble(Puzzle puzzle)
     {
         if (IsCubePuzzle(puzzle))
         {
@@ -39,7 +40,7 @@ public class ScramblerService : IScramblerService
             return GenerateScramble(GetCubePuzzle(cubeSize), puzzle);
         }
 
-        if (puzzle is RoomPuzzle.Megaminx)
+        if (puzzle is Puzzle.Megaminx)
         {
             return GenerateScramble(new MegaminxPuzzle());
         }
@@ -47,11 +48,11 @@ public class ScramblerService : IScramblerService
         return null;
     }
 
-    public ScrambleWithImage GenerateScrambleWithImage(RoomPuzzle puzzle)
+    public ScrambleWithImage GenerateScrambleWithImage(Puzzle puzzle)
     {
         var result = new ScrambleWithImage();
-        Puzzle.PuzzleState puzzleState;
-        Puzzle puzzleObject;
+        WcaScrambler.Puzzles.Puzzle.PuzzleState puzzleState;
+        WcaScrambler.Puzzles.Puzzle puzzleObject;
         if (IsCubePuzzle(puzzle))
         {
             var cubeSize = GetCubeSize(puzzle);
@@ -61,7 +62,7 @@ public class ScramblerService : IScramblerService
 
             result.Image = MapToPuzzleImage((puzzleState as CubePuzzle.CubeState)?.Image, cubeSize);
         }
-        else if (puzzle is RoomPuzzle.Megaminx)
+        else if (puzzle is Puzzle.Megaminx)
         {
             puzzleObject = new MegaminxPuzzle();
             (result.Scramble, _) = ScramblePuzzle(puzzleObject);
@@ -70,7 +71,7 @@ public class ScramblerService : IScramblerService
         return result;
     }
 
-    public PuzzleImage GetImageFromScramble(string scramble, RoomPuzzle puzzleType)
+    public PuzzleImage GetImageFromScramble(string scramble, Puzzle puzzleType)
     {
         if (IsCubePuzzle(puzzleType))
         {
@@ -85,7 +86,7 @@ public class ScramblerService : IScramblerService
         return null;
     }
 
-    private (string Scramble, Puzzle.PuzzleState State) ScramblePuzzle(Puzzle puzzleObject, RoomPuzzle? puzzle = null)
+    private (string Scramble, WcaScrambler.Puzzles.Puzzle.PuzzleState State) ScramblePuzzle(WcaScrambler.Puzzles.Puzzle puzzleObject, Puzzle? puzzle = null)
     {
         var scramble = GenerateScramble(puzzleObject, puzzle);
 
@@ -94,7 +95,7 @@ public class ScramblerService : IScramblerService
         return (scramble, scrambledState);
     }
 
-    private string GenerateScramble(Puzzle puzzleObject, RoomPuzzle? puzzle = null)
+    private string GenerateScramble(WcaScrambler.Puzzles.Puzzle puzzleObject, Puzzle? puzzle = null)
     {
         var sourceOfRandomness = new Random();
         var scramble = puzzleObject?.GenerateWcaScramble(sourceOfRandomness);
@@ -158,20 +159,20 @@ public class ScramblerService : IScramblerService
         };
     }
 
-    private static bool IsCubePuzzle(RoomPuzzle puzzle)
+    private static bool IsCubePuzzle(Puzzle puzzle)
     {
-        return puzzle is RoomPuzzle.TwoByTwoCube
-            or RoomPuzzle.ThreeByThreeCube
-            or RoomPuzzle.FourByFourCube
-            or RoomPuzzle.FiveByFiveCube
-            or RoomPuzzle.SixBySixCube
-            or RoomPuzzle.SevenBySevenCube
-            or RoomPuzzle.ThreeByThreeBld
-            or RoomPuzzle.FourByFourBld
-            or RoomPuzzle.FiveByFiveBld;
+        return puzzle is Puzzle.TwoByTwoCube
+            or Puzzle.ThreeByThreeCube
+            or Puzzle.FourByFourCube
+            or Puzzle.FiveByFiveCube
+            or Puzzle.SixBySixCube
+            or Puzzle.SevenBySevenCube
+            or Puzzle.ThreeByThreeBld
+            or Puzzle.FourByFourBld
+            or Puzzle.FiveByFiveBld;
     }
 
-    private static int GetCubeSize(RoomPuzzle puzzle)
+    private static int GetCubeSize(Puzzle puzzle)
     {
         // TODO: Replace this piece of shit in all places with normal logic of handling subsets such as bld
         return (int)puzzle % 11;

@@ -8,7 +8,7 @@ public class UserSolveResult : BaseSolveResult
 
     public string Scramble { get; set; }
 
-    public RoomPuzzle Puzzle { get; set; }
+    public Puzzle Puzzle { get; set; }
 
     public DateTime DateAdded { get; set; }
 }

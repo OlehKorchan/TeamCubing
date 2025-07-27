@@ -120,14 +120,14 @@ public class AccountService : IAccountService
                 {
                     var bestResult = pg
                         .Where(solve => solve.Penalty != Penalty.DNF)
-                        .MinBy(s => s.Time);
+                        .MinBy(s => s.TimeMilliseconds);
 
                     return new BestUserResultsByPuzzleResponse
                     {
                         Event = pg.Key,
                         Single = new BaseSolveResult
                         {
-                            Time = bestResult.Time,
+                            TimeMilliseconds = bestResult.TimeMilliseconds,
                             Penalty = bestResult.Penalty
                         },
                         Average = pg.CalculateBestAverage(5),

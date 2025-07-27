@@ -4,7 +4,7 @@ namespace TeamCubing.Domain.ResponseModels;
 
 public class BestUserResultsByPuzzleResponse
 {
-    public RoomPuzzle Event { get; set; }
+    public Puzzle Event { get; set; }
 
     public BaseSolveResult Single { get; set; }
 

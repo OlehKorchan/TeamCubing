@@ -8,13 +8,13 @@ namespace TeamCubing.BLL.Tests.Services;
 public class ScramblerServiceTests
 {
     [Theory]
-    [InlineData(RoomPuzzle.ThreeByThreeCube)]
-    [InlineData(RoomPuzzle.TwoByTwoCube)]
-    [InlineData(RoomPuzzle.FourByFourCube)]
-    [InlineData(RoomPuzzle.FiveByFiveCube)]
-    [InlineData(RoomPuzzle.SixBySixCube)]
-    [InlineData(RoomPuzzle.SevenBySevenCube)]
-    public void GenerateCubeScramble_ShouldGenerateValidScrambleAndImage(RoomPuzzle puzzle)
+    [InlineData(Puzzle.ThreeByThreeCube)]
+    [InlineData(Puzzle.TwoByTwoCube)]
+    [InlineData(Puzzle.FourByFourCube)]
+    [InlineData(Puzzle.FiveByFiveCube)]
+    [InlineData(Puzzle.SixBySixCube)]
+    [InlineData(Puzzle.SevenBySevenCube)]
+    public void GenerateCubeScramble_ShouldGenerateValidScrambleAndImage(Puzzle puzzle)
     {
         // Arrange
         var sut = new ScramblerService();

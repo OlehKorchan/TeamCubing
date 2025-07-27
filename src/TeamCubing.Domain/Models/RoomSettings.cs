@@ -5,7 +5,7 @@ namespace TeamCubing.Domain.Models;
 public class RoomSettings
 {
     [JsonProperty("puzzle")]
-    public RoomPuzzle Puzzle { get; set; } = RoomPuzzle.ThreeByThreeCube;
+    public Puzzle Puzzle { get; set; } = Puzzle.ThreeByThreeCube;
 
     [JsonProperty("isOpen")]
     public bool IsOpen { get; set; }

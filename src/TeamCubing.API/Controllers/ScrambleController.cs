@@ -16,7 +16,7 @@ public class ScrambleController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetScrambleAsync(RoomPuzzle puzzle)
+    public IActionResult GetScrambleAsync(Puzzle puzzle)
     {
         return Ok(_scramblerService.GenerateScrambleWithImage(puzzle));
     }

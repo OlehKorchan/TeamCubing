@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TeamCubing.BLL.Helpers;
 using TeamCubing.BLL.Interfaces;
+using TeamCubing.Domain.Models;
 using TeamCubing.Domain.RequestModels;
 using TeamCubing.Domain.ResponseModels;
 
@@ -25,20 +26,29 @@ public class AccountController : ControllerBase
 
     [HttpGet("results")]
     [Authorize]
-    public async Task<IActionResult> GetUserResults()
+    [ProducesResponseType<UserStatisticsResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<UserStatisticsResponse>> GetUserResults()
     {
         return Ok(await _accountService.GetUserStatistics());
     }
 
+    /// <summary>
+    /// Get all application users for admin purposes.
+    /// </summary>
+    /// <returns>List of application users.</returns>
     [HttpGet]
     [Authorize(Roles = "admin")]
-    public async Task<IActionResult> GetAllUsers()
+    [ProducesResponseType<List<ApplicationUser>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<List<ApplicationUser>>> GetAllUsers()
     {
         return Ok(await _accountService.GetAllAsync());
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync(RegisterRequestModel registerModel)
+    public async Task<ActionResult<RegisterResponseModel>> Register(RegisterRequestModel registerModel)
     {
         var responseModel =
             new RegisterResponseModel();
@@ -62,7 +72,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> LoginAsync(LoginRequestModel loginModel)
+    public async Task<ActionResult<LoginResponseModel>> Login(LoginRequestModel loginModel)
     {
         var responseModel = new LoginResponseModel();
 

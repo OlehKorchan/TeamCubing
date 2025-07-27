@@ -21,7 +21,7 @@ public static class SolvesExtension
 
         if (nonDnfResults.Any())
         {
-            result.Time = nonDnfResults.MinBy(s => s.Time).Time;
+            result.TimeMilliseconds = nonDnfResults.MinBy(s => s.TimeMilliseconds).TimeMilliseconds;
         }
         else
         {
@@ -46,17 +46,17 @@ public static class SolvesExtension
             return result;
         }
 
-        var totalTime = baseSolveResults.Sum(s => s.Time);
+        var totalTime = baseSolveResults.Sum(s => s.TimeMilliseconds);
         var worstTime = dnfCount == 0
-            ? baseSolveResults.MaxBy(r => r.Time).Time
-            : baseSolveResults.First(r => r.Penalty == Penalty.DNF).Time;
+            ? baseSolveResults.MaxBy(r => r.TimeMilliseconds).TimeMilliseconds
+            : baseSolveResults.First(r => r.Penalty == Penalty.DNF).TimeMilliseconds;
         var bestTime = baseSolveResults.Where(r => r.Penalty != Penalty.DNF)
-            .MinBy(s => s.Time)
-            .Time;
+            .MinBy(s => s.TimeMilliseconds)
+            .TimeMilliseconds;
 
         totalTime -= worstTime + bestTime;
 
-        result.Time = totalTime / (length - 2);
+        result.TimeMilliseconds = totalTime / (length - 2);
 
         return result;
     }
